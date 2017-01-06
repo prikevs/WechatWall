@@ -5,6 +5,7 @@ import (
 	"crawler/logger"
 	"crawler/ucrawler"
 	"crawler/utils"
+	// "libredis"
 )
 
 var log = logger.GetLogger()
@@ -18,9 +19,13 @@ func need(cfg *config.Config, user *ucrawler.User) bool {
 }
 
 func Run(cfg *config.Config, usersch <-chan []ucrawler.User, usersch_filtered chan<- []ucrawler.User) {
+	// okset := libredis.GetOKSet()
+	// wxset := libredis.GetWXSet()
+
 	for users := range usersch {
 		filtered := make([]ucrawler.User, 0)
 		for _, user := range users {
+			// set userinfo
 			if need(cfg, &user) {
 				filtered = append(filtered, user)
 			}
