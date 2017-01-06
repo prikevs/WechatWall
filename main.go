@@ -4,11 +4,13 @@ import (
 	"crawler/config"
 	"crawler/filter"
 	"crawler/icrawler"
+	"crawler/logger"
 	"crawler/ucrawler"
 
-	"log"
 	"time"
 )
+
+var log = logger.GetLogger()
 
 func start_icrawler(usersch_filtered chan []ucrawler.User) {
 	cfg := config.New()
@@ -21,7 +23,7 @@ func start_ucrawler(usersch chan []ucrawler.User) {
 		go ucrawler.Run(cfg, usersch)
 		d := time.Duration(cfg.CrawlInterval) * time.Second
 		for t := range time.Tick(d) {
-			log.Println("user crawler starts at ", t)
+			log.Info("user crawler starts at ", t)
 			go ucrawler.Run(cfg, usersch)
 		}
 	}()

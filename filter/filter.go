@@ -2,11 +2,12 @@ package filter
 
 import (
 	"crawler/config"
+	"crawler/logger"
 	"crawler/ucrawler"
 	"crawler/utils"
-
-	"log"
 )
+
+var log = logger.GetLogger()
 
 func need(cfg *config.Config, user *ucrawler.User) bool {
 	path := utils.BuildImagePath(cfg, user)
@@ -26,10 +27,10 @@ func Run(cfg *config.Config, usersch <-chan []ucrawler.User, usersch_filtered ch
 		}
 		num := len(filtered)
 		if num == 0 {
-			log.Println("nothing to do")
+			log.Info("all users have been fetched, nothing to do")
 			continue
 		} else {
-			log.Println(num, " more images need to be crawled")
+			log.Info(num, " more images need to be crawled")
 		}
 		usersch_filtered <- filtered
 	}
