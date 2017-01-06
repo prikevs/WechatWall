@@ -21,13 +21,19 @@ func need(cfg *config.Config, user *ucrawler.User) bool {
 func Run(cfg *config.Config, usersch <-chan []ucrawler.User, usersch_filtered chan<- []ucrawler.User) {
 	// okset := libredis.GetOKSet()
 	// wxset := libredis.GetWXSet()
+	// usmap := libredis.GetUsersMap()
 
 	for users := range usersch {
 		filtered := make([]ucrawler.User, 0)
 		for _, user := range users {
-			// set userinfo
+
+			// set userinfo to usersmap
+			// delete from wxset
+
 			if need(cfg, &user) {
 				filtered = append(filtered, user)
+			} else {
+				// set into okset
 			}
 		}
 		num := len(filtered)

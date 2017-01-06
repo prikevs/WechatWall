@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	OKMAPNAME = "map:users:ok:openid:"
+	USERSMAPNAME = "map:users:openid:"
 )
 
 type Map interface {
@@ -49,8 +49,8 @@ func (this *mMap) Del(k string) (result int64, err error) {
 	return
 }
 
-func GetOKMap() (Map, error) {
-	return GetMap(OKMAPNAME)
+func GetUsersMap() (Map, error) {
+	return GetMap(USERSMAPNAME)
 }
 
 func GetMap(prefix string) (Map, error) {
