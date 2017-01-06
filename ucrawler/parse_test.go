@@ -6,7 +6,7 @@ import (
 )
 
 func TestParse(t *testing.T) {
-	cfg := config.New()
+	cfg := config.NewForTest()
 	ftc := NewFetcher(cfg)
 	resp, err := ftc.Do()
 	if err != nil {

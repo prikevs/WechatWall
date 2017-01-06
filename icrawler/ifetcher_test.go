@@ -7,7 +7,7 @@ import (
 )
 
 func TestIFetcher(t *testing.T) {
-	cfg := config.New()
+	cfg := config.NewForTest()
 	user := &ucrawler.User{
 		UserOpenid: "o_5d9syXDq7AiyB387ZHEpX6NKQE",
 	}

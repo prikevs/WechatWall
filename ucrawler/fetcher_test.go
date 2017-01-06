@@ -6,7 +6,7 @@ import (
 )
 
 func TestFetcher(t *testing.T) {
-	cfg := config.New()
+	cfg := config.NewForTest()
 	ftc := NewFetcher(cfg)
 	if _, err := ftc.Do(); err != nil {
 		t.Fatal(err)

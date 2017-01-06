@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 )
 
 func WriteFile(path string, data []byte) (err error) {
@@ -28,4 +29,12 @@ func FileExists(path string) bool {
 		return true
 	}
 	return false
+}
+
+func CurrentDir() (string, error) {
+	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	if err != nil {
+		return "", err
+	}
+	return dir, nil
 }
