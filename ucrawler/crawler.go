@@ -4,8 +4,7 @@ import (
 	"crawler/config"
 )
 
-func Run(usersch chan []User) {
-	cfg := config.New()
+func Run(cfg *config.Config, usersch chan []User) {
 	fetcher := NewFetcher(cfg)
 
 	resp, err := fetcher.Do()

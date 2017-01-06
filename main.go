@@ -1,16 +1,46 @@
 package main
 
 import (
+	"crawler/config"
+	"crawler/filter"
+	"crawler/icrawler"
 	"crawler/ucrawler"
 
-	"fmt"
+	"log"
+	"time"
 )
 
-func main() {
-	usersch := make(chan []ucrawler.User)
-	go ucrawler.Run(usersch)
+func start_icrawler(usersch_filtered chan []ucrawler.User) {
+	cfg := config.New()
+	go icrawler.Run(cfg, usersch_filtered)
+}
 
-	for us := range usersch {
-		fmt.Println(us)
-	}
+func start_ucrawler(usersch chan []ucrawler.User) {
+	cfg := config.New()
+	go func() {
+		go ucrawler.Run(cfg, usersch)
+		d := time.Duration(cfg.CrawlInterval) * time.Second
+		for t := range time.Tick(d) {
+			log.Println("user crawler starts at ", t)
+			go ucrawler.Run(cfg, usersch)
+		}
+	}()
+}
+
+func start_filter(usersch, usersch_filtered chan []ucrawler.User) {
+	cfg := config.New()
+	go filter.Run(cfg, usersch, usersch_filtered)
+}
+
+func main() {
+	cfg := config.New()
+	usersch := make(chan []ucrawler.User, cfg.PoolSize)
+	usersch_filtered := make(chan []ucrawler.User, cfg.PoolSize)
+
+	start_icrawler(usersch_filtered)
+	start_filter(usersch, usersch_filtered)
+	start_ucrawler(usersch)
+
+	forever := make(chan bool)
+	<-forever
 }

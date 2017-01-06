@@ -24,7 +24,7 @@ func (this *Fetcher) Do() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	prepare(req, this.cfg)
+	prepare(this.cfg, req)
 
 	resp, err := this.client.Do(req)
 	if err != nil {
@@ -40,7 +40,7 @@ func (this *Fetcher) Do() ([]byte, error) {
 	return resp_body, nil
 }
 
-func prepare(req *http.Request, cfg *config.Config) {
+func prepare(cfg *config.Config, req *http.Request) {
 	for k, v := range cfg.Headers {
 		req.Header.Set(k, v)
 	}
