@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	CONFIGJSON = "config.json"
-	COOKIE     = "cookie"
+	CONFIGJSON = "crawler-config.json"
+	COOKIE     = "crawler-cookie"
 )
 
 type Config struct {
