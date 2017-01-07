@@ -50,7 +50,7 @@ func TestPublishClassToMQ(t *testing.T) {
 		UserOpenid: "3456",
 		CreateTime: 1483750094,
 		Content:    "hello",
-		MsgId:      "6789",
+		MsgId:      6789,
 		MsgType:    "text",
 	}
 	if err := PublishClassToMQ(msg, mq); err != nil {

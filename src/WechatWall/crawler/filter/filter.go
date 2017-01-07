@@ -2,13 +2,13 @@ package filter
 
 import (
 	"WechatWall/crawler/config"
-	"WechatWall/crawler/logger"
 	"WechatWall/crawler/ucrawler"
 	"WechatWall/crawler/utils"
 	"WechatWall/libredis"
+	"WechatWall/logger"
 )
 
-var log = logger.GetLogger()
+var log = logger.GetLogger("crawler")
 
 func gotImage(cfg *config.Config, user *ucrawler.User) bool {
 	path := utils.BuildImagePath(cfg, user)

@@ -2,13 +2,13 @@ package icrawler
 
 import (
 	"WechatWall/crawler/config"
-	"WechatWall/crawler/logger"
 	"WechatWall/crawler/ucrawler"
 	"WechatWall/crawler/utils"
+	"WechatWall/logger"
 	// "time"
 )
 
-var log = logger.GetLogger()
+var log = logger.GetLogger("crawler")
 
 func Download(cfg *config.Config, user *ucrawler.User) {
 	ifetcher := NewIFetcher(cfg, user)

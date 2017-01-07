@@ -36,6 +36,6 @@ func init() {
 	logging.SetBackend(backend1Leveled, backend2Leveled)
 }
 
-func GetLogger() *logging.Logger {
-	return log
+func GetLogger(name string) *logging.Logger {
+	return logging.MustGetLogger(name)
 }

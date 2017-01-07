@@ -4,16 +4,16 @@ import (
 	"WechatWall/crawler/config"
 	"WechatWall/crawler/filter"
 	"WechatWall/crawler/icrawler"
-	"WechatWall/crawler/logger"
 	"WechatWall/crawler/ucrawler"
 	"WechatWall/crawler/utils"
+	"WechatWall/logger"
 
 	"flag"
 	"path"
 	"time"
 )
 
-var log = logger.GetLogger()
+var log = logger.GetLogger("crawler")
 
 type Options struct {
 	CfgDir string

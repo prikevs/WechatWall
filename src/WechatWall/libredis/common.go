@@ -2,6 +2,7 @@ package libredis
 
 import (
 	"encoding/json"
+	"strconv"
 	"time"
 )
 
@@ -57,12 +58,12 @@ type Msg struct {
 	UserOpenid string
 	CreateTime int64
 	Content    string
-	MsgId      string
+	MsgId      int64
 	MsgType    string
 }
 
 func (this *Msg) Key() string {
-	return this.MsgId
+	return strconv.FormatInt(int64(this.MsgId), 10)
 }
 
 func (this *Msg) Json() (string, error) {

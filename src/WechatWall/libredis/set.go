@@ -30,6 +30,7 @@ func (this *mSet) GetSetName() string {
 }
 
 func (this *mSet) IsMember(v string) (result bool, err error) {
+	result = false
 	result, err = this.Client.SIsMember(this.Name, v).Result()
 	return
 }

@@ -2,10 +2,10 @@ package ucrawler
 
 import (
 	"WechatWall/crawler/config"
-	"WechatWall/crawler/logger"
+	"WechatWall/logger"
 )
 
-var log = logger.GetLogger()
+var log = logger.GetLogger("crawler")
 
 func Run(cfg *config.Config, usersch chan []User) {
 	fetcher := NewFetcher(cfg)
