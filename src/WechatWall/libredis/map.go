@@ -2,14 +2,18 @@ package libredis
 
 import (
 	"gopkg.in/redis.v5"
+
+	"time"
 )
 
 const (
 	USERSMAPNAME = "map:users:openid:"
+	PMSGSNAME    = "map:msgs:pending:msgid:"
 )
 
 type Map interface {
 	Set(string, string) error
+	SetTimeout(string, time.Duration) (bool, error)
 	Get(string) (string, error)
 	Exists(string) (bool, error)
 	Del(string) (int64, error)
@@ -27,6 +31,12 @@ func (this *mMap) Key(k string) string {
 func (this *mMap) Set(k, v string) error {
 	key := this.Key(k)
 	return this.Client.Set(key, v, 0).Err()
+}
+
+func (this *mMap) SetTimeout(k string, timeout time.Duration) (result bool, err error) {
+	key := this.Key(k)
+	result, err = this.Client.Expire(key, timeout).Result()
+	return
 }
 
 func (this *mMap) Get(k string) (result string, err error) {
@@ -51,6 +61,10 @@ func (this *mMap) Del(k string) (result int64, err error) {
 
 func GetUsersMap() (Map, error) {
 	return GetMap(USERSMAPNAME)
+}
+
+func GetPMsgsMap() (Map, error) {
+	return GetMap(PMSGSNAME)
 }
 
 func GetMap(prefix string) (Map, error) {

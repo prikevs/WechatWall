@@ -6,6 +6,10 @@ import (
 	"time"
 )
 
+const (
+	MsgTTL = 30 * time.Second
+)
+
 type Class interface {
 	Key() string
 	Json() (string, error)
@@ -42,6 +46,15 @@ func SetClassToMap(cls Class, mp Map) error {
 	return mp.Set(cls.Key(), data)
 }
 
+func SetClassToMapWithTTL(cls Class, mp Map, timeout time.Duration) error {
+	// TODO: use transaction here
+	if err := SetClassToMap(cls, mp); err != nil {
+		return err
+	}
+	_, err := mp.SetTimeout(cls.Key(), timeout)
+	return err
+}
+
 func GetClassFromMap(k string, cls Class, mp Map) error {
 	data, err := mp.Get(k)
 	if err != nil {
@@ -60,6 +73,8 @@ type Msg struct {
 	Content    string
 	MsgId      int64
 	MsgType    string
+	TTL        time.Duration
+	AddTime    time.Time
 }
 
 func (this *Msg) Key() string {

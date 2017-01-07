@@ -9,6 +9,7 @@ import (
 	"github.com/chanxuehong/wechat.v2/mp/message/callback/response"
 
 	"net/http"
+	"time"
 )
 
 var log = logger.GetLogger("wechat")
@@ -79,6 +80,8 @@ func textMsgHandler(ctx *core.Context) {
 		Content:    msg.Content,
 		MsgId:      ctx.MixedMsg.MsgId,
 		MsgType:    "text",
+		TTL:        libredis.MsgTTL,
+		AddTime:    time.Now(),
 	}
 
 	var err error
