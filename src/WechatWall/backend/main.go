@@ -1,6 +1,8 @@
 package main
 
 import (
+	"WechatWall/backend/verifier"
+	"WechatWall/backend/wall"
 	"WechatWall/backend/wechat"
 
 	"log"
@@ -9,6 +11,8 @@ import (
 
 func init() {
 	http.HandleFunc("/wx_callback", wechat.CallbackHandler)
+	http.HandleFunc("/ws/verifier", verifier.ServeVerifierWS)
+	http.HandleFunc("/ws/wall", wall.ServeWallWS)
 }
 
 func main() {

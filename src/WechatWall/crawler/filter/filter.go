@@ -10,6 +10,12 @@ import (
 
 var log = logger.GetLogger("crawler")
 
+var (
+	okset libredis.Set
+	wxset libredis.Set
+	usmap libredis.Map
+)
+
 func gotImage(cfg *config.Config, user *ucrawler.User) bool {
 	path := utils.BuildImagePath(cfg, user)
 	if utils.FileExists(path) {
@@ -32,42 +38,42 @@ func CriticalError(err error) {
 	}
 }
 
+func FailOnError(err error) {
+	if err != nil {
+		log.Critical(err)
+		panic(err)
+	}
+}
+
+func init() {
+	var err error
+	okset, err = libredis.GetOKSet()
+	FailOnError(err)
+	wxset, err = libredis.GetWXSet()
+	FailOnError(err)
+	usmap, err = libredis.GetUsersMap()
+	FailOnError(err)
+}
+
 // return true if need to be crawled
 func checkUser(cfg *config.Config, user *ucrawler.User) bool {
 	log.Debug("starting to check users")
-	okset, err := libredis.GetOKSet()
-	if err != nil {
-		log.Critical("failed to get ok set, ", err)
-		return originCheck(cfg, user)
-	}
-
-	wxset, err := libredis.GetWXSet()
-	if err != nil {
-		log.Critical("failed to get wx set, ", err)
-		return originCheck(cfg, user)
-	}
-
-	usmap, err := libredis.GetUsersMap()
-	if err != nil {
-		log.Critical("failed to get users map, ", err)
-		return originCheck(cfg, user)
-	}
 
 	// if in ok set
-	log.Debug("check if user ", user.UserOpenid, " in ok set")
+	log.Debug("check if user", user.UserOpenid, "in ok set")
 	ismem, err := okset.IsMember(user.UserOpenid)
 	if err != nil {
-		log.Critical("failed to check if user ok, ", err)
+		log.Critical("failed to check if user ok,", err)
 		return originCheck(cfg, user)
 	}
 
 	if ismem {
-		log.Debug("user ", user.UserOpenid, " in ok set, skip")
+		log.Debug("user", user.UserOpenid, "in ok set, skip")
 		return false
 	}
 
 	// set userinfo to usersmap
-	log.Debug("set user ", user.UserOpenid, " to usersmap")
+	log.Debug("set user", user.UserOpenid, "to usersmap")
 	um := &libredis.User{
 		UserOpenid:     user.UserOpenid,
 		UserName:       user.UserName,
@@ -75,20 +81,20 @@ func checkUser(cfg *config.Config, user *ucrawler.User) bool {
 	}
 	err = libredis.SetClassToMap(um, usmap)
 	if err != nil {
-		log.Critical("failed to set user to users map, ", err)
+		log.Critical("failed to set user to users map,", err)
 		return originCheck(cfg, user)
 	}
 
 	// delete from wxset
-	log.Debug("delete user ", user.UserOpenid, " from wxset")
+	log.Debug("delete user", user.UserOpenid, "from wxset")
 	affected, err := wxset.Del(user.UserOpenid)
 	if err != nil {
-		log.Critical("failed to del user from wx set, ", err)
+		log.Critical("failed to del user from wx set,", err)
 		return originCheck(cfg, user)
 	}
 
 	if affected > 0 {
-		log.Info("delete ", affected, " elements from wxset")
+		log.Info("delete", affected, "elements from wxset")
 	} else {
 		log.Debug("nothing to do with wxset")
 	}

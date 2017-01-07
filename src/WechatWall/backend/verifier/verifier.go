@@ -11,6 +11,7 @@ package verifier
 	"img_url": "/img/xxxxx.jpg"
 }
 
+
 {
 	"msg_id": xxxxxx,
 	"verified_time": 1483767999,
@@ -29,8 +30,10 @@ import (
 var log = logger.GetLogger("verifier")
 
 const (
-	ReadyPipeSize     = 20
-	MaxMsgWaitingTime = 5 * 60 * time.Second
+	ReadyPipeSize            = 20
+	MaxMsgWaitingTime        = 5 * 60 * time.Second
+	SendVerificationDuration = 1 * time.Second
+	TickWarnRound            = 3
 )
 
 var (
@@ -40,12 +43,49 @@ var (
 	vMQ      libredis.MQ
 	okSet    libredis.Set
 	pMsgsMap libredis.Map
+	usersMap libredis.Map
 )
+
+// verification message to send
+type VMsgSent struct {
+	Username   string
+	Openid     string
+	MsgId      int64  `json:"msg_id"`
+	MsgType    string `json:"msg_type"`
+	CreateTime int64  `json:"create_time"`
+	Content    string
+	ImgUrl     string `json:"img_url"`
+}
+
+// verification message to receive
+type VMsgRecvd struct {
+	MsgId        int64 `json:"msg_id"`
+	VerifiedTime int64 `json:"verified_time"`
+	ShowNow      bool  `json:"show_now"`
+}
 
 func FailOnError(err error) {
 	if err != nil {
 		log.Critical(err)
 		panic(err)
+	}
+}
+
+func tickBroadcastSignal(bc chan bool, d time.Duration) {
+	round := 0
+	for range time.Tick(d) {
+		select {
+		case bc <- true:
+			round = 0
+		default:
+			round++
+			if round >= TickWarnRound {
+				log.Warning("wall tick not working for",
+					round,
+					"round(s), maybe hub is doing some heavy work, reset tick")
+				round = 0
+			}
+		}
 	}
 }
 
@@ -60,11 +100,14 @@ func init() {
 	FailOnError(err)
 	pMsgsMap, err = libredis.GetPMsgsMap()
 	FailOnError(err)
+	usersMap, err = libredis.GetUsersMap()
 
 	readymsgs := make(chan libredis.Msg, ReadyPipeSize)
-	hub = newHub(readymsgs)
+	bc := make(chan bool)
+	hub = newHub(readymsgs, bc)
 	go hub.run()
 	go prepareMsgs(readymsgs)
+	go tickBroadcastSignal(bc, SendVerificationDuration)
 }
 
 func prepareMsgs(readymsgs chan<- libredis.Msg) {
@@ -91,12 +134,20 @@ func prepareMsgs(readymsgs chan<- libredis.Msg) {
 					msg.UserOpenid, err.Error())
 			}
 		} else {
-			log.Debugf("msg from %s is ready to be verified", msg.UserOpenid)
+			// get user info
+			user := &libredis.User{}
+			if err := libredis.GetClassFromMap(msg.UserOpenid, user, usersMap); err != nil {
+				log.Error("failed to get user info from users map")
+				continue
+			}
+			msg.Username = user.UserName
+
+			log.Debugf("msg from %s is ready to be verified", msg.Username)
 			readymsgs <- *msg
 		}
 	}
 }
 
-func serveVerifier(w http.ResponseWriter, r *http.Request) {
+func ServeVerifierWS(w http.ResponseWriter, r *http.Request) {
 	serveWs(hub, w, r)
 }

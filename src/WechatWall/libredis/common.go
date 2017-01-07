@@ -68,13 +68,15 @@ func GetClassFromMap(k string, cls Class, mp Map) error {
 
 // message struct
 type Msg struct {
-	UserOpenid string
-	CreateTime int64
-	Content    string
-	MsgId      int64
-	MsgType    string
-	TTL        time.Duration
-	AddTime    time.Time
+	Username     string
+	UserOpenid   string `json:"user_openid"`
+	CreateTime   int64  `json:"create_time"`
+	Content      string
+	MsgId        int64  `json:"msg_id"`
+	MsgType      string `json:"msg_type"`
+	VerifiedTime int64  `json:"verified_time"`
+	TTL          time.Duration
+	AddTime      time.Time `json:"add_time"`
 }
 
 func (this *Msg) Key() string {

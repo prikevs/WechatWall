@@ -1,7 +1,10 @@
 package verifier
 
 import (
+	"WechatWall/backend/utils"
 	"WechatWall/libredis"
+
+	"encoding/json"
 )
 
 // hub maintains the set of active clients and broadcasts messages to the
@@ -11,7 +14,7 @@ type Hub struct {
 	clients map[*Client]bool
 
 	// Inbound messages from the clients.
-	broadcast chan bool
+	broadcast <-chan bool
 
 	// Register requests from the clients.
 	register chan *Client
@@ -23,23 +26,22 @@ type Hub struct {
 	readymsgs <-chan libredis.Msg
 }
 
-func newHub(ch <-chan libredis.Msg) *Hub {
+func newHub(msg <-chan libredis.Msg, bc <-chan bool) *Hub {
 	return &Hub{
-		broadcast:  make(chan bool),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 		clients:    make(map[*Client]bool),
-		readymsgs:  ch,
+		broadcast:  bc,
+		readymsgs:  msg,
 	}
 }
-
-// TODO: pre handle ready messages
 
 func (h *Hub) run() {
 	reuse := make(chan libredis.Msg, 2)
 	for {
 		select {
 		case client := <-h.register:
+			log.Info("another client comes online,", client)
 			h.clients[client] = true
 		case client := <-h.unregister:
 			if _, ok := h.clients[client]; ok {
@@ -51,23 +53,41 @@ func (h *Hub) run() {
 		case <-h.broadcast:
 			for client := range h.clients {
 				var msg libredis.Msg
+				var empty bool
 				select {
 				case msg = <-reuse:
 				case msg = <-h.readymsgs:
 				default:
-					// no message got, break
+					empty = true
 					break
 				}
 
+				// no message got, break
+				if empty {
+					break
+				}
 				// got message, add message to pending msgs map, set TTL
-				data, err := msg.Json()
+				log.Info("prepare to send msg", msg.MsgId, "for verification")
+				vmsg := &VMsgSent{
+					Username:   msg.Username,
+					Openid:     msg.UserOpenid,
+					MsgId:      msg.MsgId,
+					MsgType:    msg.MsgType,
+					CreateTime: msg.CreateTime,
+					Content:    msg.Content,
+					ImgUrl:     utils.BuildImagePath(msg.UserOpenid),
+				}
+				data, err := json.Marshal(vmsg)
 				if err != nil {
 					log.Warningf("message from %s failed to encode to json",
 						msg.UserOpenid)
 					continue
 				}
+
+				// prepare to send message
 				select {
 				case client.send <- []byte(data):
+					log.Info("msg", msg.MsgId, "sent to", msg.UserOpenid)
 					if err := libredis.SetClassToMapWithTTL(&msg, pMsgsMap, MaxMsgWaitingTime); err != nil {
 						log.Error("failed to set message from %s to waiting map:", err)
 					}

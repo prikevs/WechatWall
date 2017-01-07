@@ -1,5 +1,5 @@
 {
-    "image_path":"/Users/kevince/Documents/others/gocrawler/src/crawler/data/images",
+    "image_path":"/Users/kevince/Documents/others/gocrawler/src/WechatWall/crawler/data/images",
     "token" : "433392960",
 	"pool_size" : 10,
 	"crawl_interval": 10,

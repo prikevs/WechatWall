@@ -1,16 +1,11 @@
-package verifier
+package wall
 
 import (
-	"WechatWall/libredis"
+	"bytes"
+	"net/http"
+	"time"
 
 	"github.com/gorilla/websocket"
-
-	"bytes"
-	"encoding/json"
-	"errors"
-	"net/http"
-	"strconv"
-	"time"
 )
 
 const (
@@ -48,35 +43,6 @@ type Client struct {
 	send chan []byte
 }
 
-func handleVMsg(data []byte) error {
-	recvm := &VMsgRecvd{}
-	if err := json.Unmarshal(data, recvm); err != nil {
-		return err
-	}
-	if recvm.MsgId == 0 {
-		return errors.New("invalid parameter msgid")
-	}
-
-	msg := &libredis.Msg{}
-	if err := libredis.GetClassFromMap(
-		strconv.FormatInt(recvm.MsgId, 10), msg, pMsgsMap); err != nil {
-		return errors.New("failed to get message info, maybe due to TTL timeout: " + err.Error())
-	}
-	msg.VerifiedTime = recvm.VerifiedTime
-	// publish to wechat wall (vMQ)
-	if recvm.ShowNow == true {
-		if err := libredis.PublishRClassToMQ(msg, vMQ); err != nil {
-			return errors.New("failed to publish to the front of vmq: " + err.Error())
-		}
-	} else {
-		if err := libredis.PublishClassToMQ(msg, vMQ); err != nil {
-			return errors.New("failed to publish to the back of vmq: " + err.Error())
-		}
-	}
-	log.Info("Added message from user", msg.Username, "openid:", msg.UserOpenid, "to VMQ")
-	return nil
-}
-
 // readPump pumps messages from the websocket connection to the hub.
 //
 // The application runs readPump in a per-connection goroutine. The application
@@ -99,12 +65,7 @@ func (c *Client) readPump() {
 			break
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-
-		log.Debug("received message:", string(message))
-		// parse this message and add it to vqueue
-		if err := handleVMsg(message); err != nil {
-			log.Error("cannot handle message: ", err)
-		}
+		log.Info("received message from Wall:", string(message))
 	}
 }
 
