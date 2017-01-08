@@ -29,13 +29,41 @@ const (
 )
 
 var (
-	SendToWallDuration = 2 * time.Second
-	ReliableMsg        = true
+	dSendToWallDuration = 2 * time.Second
+	dReliableMsg        = true
+	ACfg                *config.AtomicConfig
 )
 
+func LoadReliableMsg() bool {
+	if ACfg == nil {
+		return dReliableMsg
+	}
+	cfg := ACfg.LoadConfig()
+	if cfg == nil {
+		return dReliableMsg
+	}
+	return cfg.Wall.ReliableMsg
+}
+
+func LoadSendToWallDuration() time.Duration {
+	if ACfg == nil {
+		return dSendToWallDuration
+	}
+	cfg := ACfg.LoadConfig()
+	if cfg == nil {
+		return dSendToWallDuration
+	}
+	if cfg.Wall.SendToWallDuration == 0 {
+		return dSendToWallDuration
+	}
+	return time.Duration(cfg.Wall.SendToWallDuration) * time.Second
+}
+
 var (
-	hub *Hub
-	vMQ libredis.MQ
+	hub   *Hub
+	vMQ   libredis.MQ
+	owMap libredis.Map
+	owSet libredis.Set
 )
 
 func FailOnError(err error) {
@@ -49,18 +77,21 @@ func init() {
 	var err error
 	vMQ, err = libredis.GetVMQ()
 	FailOnError(err)
+	owMap, err = libredis.GetOWMsgsMap()
+	FailOnError(err)
+	owSet, err = libredis.GetOWSet()
+	FailOnError(err)
 
 }
 
-func Init(cfg *config.WallConfig) {
-	SendToWallDuration = time.Duration(cfg.SendToWallDuration) * time.Second
-	ReliableMsg = cfg.ReliableMsg
+func Init(acfg *config.AtomicConfig) {
+	ACfg = acfg
 
 	bc := make(chan bool)
 	wallmsgs := make(chan libredis.Msg)
 	hub = newHub(wallmsgs, bc)
 	go hub.run()
-	go tickWallBroadcastSignal(bc, SendToWallDuration)
+	go tickWallBroadcastSignal(bc, LoadSendToWallDuration())
 	go prepareWallMsgs(wallmsgs)
 }
 

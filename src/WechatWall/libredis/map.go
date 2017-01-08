@@ -9,6 +9,8 @@ import (
 const (
 	USERSMAPNAME = "map:users:openid:"
 	PMSGSNAME    = "map:msgs:pending:msgid:"
+	OWMSGSNAME   = "map:msgs:onwall:msgid:"
+	LVMMAPNAME   = "map:users:lvm:openid:"
 )
 
 type Map interface {
@@ -63,8 +65,22 @@ func GetUsersMap() (Map, error) {
 	return GetMap(USERSMAPNAME)
 }
 
+// last verifed message map.
+// UserOpenid <-> MessageText
+func GetLVMMap() (Map, error) {
+	return GetMap(LVMMAPNAME)
+}
+
+// pending messages map.
+// MsgId <-> Msg
 func GetPMsgsMap() (Map, error) {
 	return GetMap(PMSGSNAME)
+}
+
+// already on wall messages map.
+// MsgId <-> Msg
+func GetOWMsgsMap() (Map, error) {
+	return GetMap(OWMSGSNAME)
 }
 
 func GetMap(prefix string) (Map, error) {

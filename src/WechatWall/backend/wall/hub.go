@@ -39,20 +39,30 @@ func (h *Hub) run() {
 		select {
 		case client := <-h.register:
 			h.clients[client] = true
+			log.Info("another wall comes online,", client)
 		case client := <-h.unregister:
 			if _, ok := h.clients[client]; ok {
+				log.Info("wall,", client, "goes offline")
 				delete(h.clients, client)
 				close(client.send)
 			}
 		case <-h.broadcast:
 			var msg libredis.Msg
 			empty := false
+			empty_reuse := false
+
 			select {
 			case msg = <-reuse:
-				break
-			case msg = <-h.wallmsgs:
 			default:
-				empty = true
+				empty_reuse = true
+			}
+
+			if empty_reuse {
+				select {
+				case msg = <-h.wallmsgs:
+				default:
+					empty = true
+				}
 			}
 
 			// no message got, break
@@ -60,9 +70,13 @@ func (h *Hub) run() {
 				break
 			}
 
-			if ReliableMsg && len(h.clients) == 0 {
+			if LoadReliableMsg() && len(h.clients) == 0 {
 				log.Info("there is no wall now, reuse message.")
-				reuse <- msg
+				select {
+				case reuse <- msg:
+				default:
+					log.Warning("reuse is full, not supposed to be here.")
+				}
 				break
 			}
 
@@ -81,13 +95,20 @@ func (h *Hub) run() {
 			if err != nil {
 				log.Warning("message from %s failed to encode to json",
 					msg.UserOpenid)
-				continue
+				break
+			}
+			if err := libredis.SetClassToMap(&msg, owMap); err != nil {
+				log.Warning("failed to add on wall message to on wall map")
+			}
+			if _, err := owSet.Add(msg.Key()); err != nil {
+				log.Warning("failed to add on wall message to on wall set")
 			}
 			// prepare to send message
 			for client := range h.clients {
 				select {
 				case client.send <- data:
 				default:
+					log.Warning("something happened when writing to wall", client, "make it offline")
 					close(client.send)
 					delete(h.clients, client)
 				}

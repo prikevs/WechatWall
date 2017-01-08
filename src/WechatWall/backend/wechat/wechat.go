@@ -38,14 +38,19 @@ var (
 	sentSet libredis.Set
 )
 
-func Init(cfg *config.WechatConfig) {
-	wxAppId = cfg.WXAppId
-	wxAppSecret = cfg.WXAppSecret
-	wxOriId = cfg.WXOriId
-	wxToken = cfg.WXToken
-	wxEncodedAESKey = cfg.WXEncodedAESKey
-	MessageOnSubscribe = cfg.MessageOnSubscribe
-	MessageOnReceived = cfg.MessageOnReceived
+func Init(acfg *config.AtomicConfig) {
+	InitConsole(acfg)
+
+	cfg := config.LoadCfgFromACfg(acfg)
+	if cfg != nil {
+		wxAppId = cfg.Wechat.WXAppId
+		wxAppSecret = cfg.Wechat.WXAppSecret
+		wxOriId = cfg.Wechat.WXOriId
+		wxToken = cfg.Wechat.WXToken
+		wxEncodedAESKey = cfg.Wechat.WXEncodedAESKey
+		MessageOnSubscribe = cfg.Wechat.MessageOnSubscribe
+		MessageOnReceived = cfg.Wechat.MessageOnReceived
+	}
 
 	mux := core.NewServeMux()
 	mux.DefaultMsgHandleFunc(defaultMsgHandler)
@@ -83,8 +88,15 @@ func init() {
 
 func textMsgHandler(ctx *core.Context) {
 	msg := request.GetText(ctx.MixedMsg)
-	log.Infof("received text message from %s: %s", msg.FromUserName, msg.Content)
+	if len(msg.Content) > 0 && msg.Content[0] == ':' {
+		log.Infof("received commands from %s: %s", msg.FromUserName, msg.Content)
+		result := handleCommand(msg.FromUserName, msg.Content[1:])
+		resp := response.NewText(msg.FromUserName, msg.ToUserName, msg.CreateTime, result)
+		ctx.AESResponse(resp, 0, "", nil)
+		return
+	}
 
+	log.Infof("received text message from %s: %s", msg.FromUserName, msg.Content)
 	rmsg := &libredis.Msg{
 		UserOpenid: msg.FromUserName,
 		CreateTime: msg.CreateTime,

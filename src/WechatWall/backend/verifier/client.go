@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 )
 
@@ -68,20 +67,40 @@ func sendNotification(msg libredis.Msg) {
 	}
 }
 
+// TODO: use NLP to determine whether to override
+func updateLastVerifiedMsg(msg *libredis.Msg) {
+	if err := lvmMap.Set(msg.UserOpenid, msg.Content); err != nil {
+		log.Warning("failed to save last verified message")
+	}
+}
+
 func handleVMsg(data []byte) error {
 	recvm := &VMsgRecvd{}
 	if err := json.Unmarshal(data, recvm); err != nil {
 		return err
 	}
-	if recvm.MsgId == 0 {
+	if recvm.MsgId == "" {
 		return errors.New("invalid parameter msgid")
 	}
 
 	msg := &libredis.Msg{}
 	if err := libredis.GetClassFromMap(
-		strconv.FormatInt(recvm.MsgId, 10), msg, pMsgsMap); err != nil {
+		recvm.MsgId, msg, pMsgsMap); err != nil {
 		return errors.New("failed to get message info, maybe due to TTL timeout: " + err.Error())
 	}
+
+	// update last verified msg
+	updateLastVerifiedMsg(msg)
+
+	// pass set
+	if _, err := passSet.Add(msg.UserOpenid); err != nil {
+		log.Warning("failed to add user to passSet")
+	}
+	// update last verified msg
+	if err := lvmMap.Set(msg.UserOpenid, msg.Content); err != nil {
+		log.Warning("failed to save last verified message")
+	}
+
 	msg.VerifiedTime = recvm.VerifiedTime
 	// publish to wechat wall (vMQ)
 	if recvm.ShowNow == true {
@@ -95,7 +114,7 @@ func handleVMsg(data []byte) error {
 	}
 	log.Info("Added message from user", msg.Username, "openid:", msg.UserOpenid, "to VMQ")
 
-	if SendNotification {
+	if LoadSendNotification() {
 		// send message to smq, notify user that msg sent
 		go sendNotification(*msg)
 	}

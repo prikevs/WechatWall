@@ -41,17 +41,18 @@ func (h *Hub) run() {
 	for {
 		select {
 		case client := <-h.register:
-			log.Info("another client comes online,", client)
+			log.Info("another verifier comes online,", client)
 			h.clients[client] = true
 		case client := <-h.unregister:
 			if _, ok := h.clients[client]; ok {
+				log.Info("verifier,", client, "goes offline")
 				delete(h.clients, client)
 				close(client.send)
 			}
 		// case verified := <-h.verified:
 		// verified message, handle here
 		case <-h.broadcast:
-			if !NeedVerification {
+			if !LoadNeedVerification() {
 				select {
 				case msg := <-h.readymsgs:
 					log.Info("you use non-verification mode, send message to vmq directly")
@@ -65,13 +66,20 @@ func (h *Hub) run() {
 			}
 			for client := range h.clients {
 				var msg libredis.Msg
-				var empty bool
+				empty := false
+				empty_reuse := false
 				select {
 				case msg = <-reuse:
-				case msg = <-h.readymsgs:
 				default:
-					empty = true
-					break
+					empty_reuse = true
+				}
+
+				if empty_reuse {
+					select {
+					case msg = <-h.readymsgs:
+					default:
+						empty = true
+					}
 				}
 
 				// no message got, break
@@ -83,7 +91,7 @@ func (h *Hub) run() {
 				vmsg := &VMsgSent{
 					Username:   msg.Username,
 					Openid:     msg.UserOpenid,
-					MsgId:      msg.MsgId,
+					MsgId:      msg.Key(),
 					MsgType:    msg.MsgType,
 					CreateTime: msg.CreateTime,
 					Content:    msg.Content,
@@ -99,11 +107,14 @@ func (h *Hub) run() {
 				// prepare to send message
 				select {
 				case client.send <- []byte(data):
-					log.Info("msg", msg.MsgId, "sent to", msg.UserOpenid)
-					if err := libredis.SetClassToMapWithTTL(&msg, pMsgsMap, MaxMsgWaitingTime); err != nil {
+					log.Info("msg", msg.MsgId, "sent to verifier")
+					if err := libredis.SetClassToMapWithTTL(
+						&msg, pMsgsMap, LoadMaxMsgWaitingTime()); err != nil {
 						log.Error("failed to set message from %s to waiting map:", err)
 					}
 				default:
+					log.Warning("something happened when writing to verifier",
+						client, "make it offline")
 					close(client.send)
 					delete(h.clients, client)
 					// reuse the message next time

@@ -6,11 +6,14 @@
         "wx_token":"kevince",
         "wx_encoded_aes_key":"VgGi6gG0orzxL0J9x4qYXg95nNBblZgLWhdeXcbW3wK",
         "message_on_subscribe": "欢迎关注！",
-        "message_on_received": "您的消息已收到，通过筛选后会上墙显示"
+        "message_on_received": "您的消息已收到，通过筛选后会上墙显示",
+        "admin_list":[
+            "o_5d9s-is4Y2UWt7u-CC4UMDYsbE"
+        ]
     },
 
     "verifier": {
-        "ready_pip_size": 20,
+        "ready_pip_size": 5,
         "max_msg_waiting_time": 300,
         "send_verification_duration": 1,
         "send_notification": true,
