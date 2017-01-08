@@ -2,9 +2,12 @@ package main
 
 import (
 	"WechatWall/backend/config"
+	"WechatWall/backend/imager"
 	"WechatWall/backend/verifier"
 	"WechatWall/backend/wall"
 	"WechatWall/backend/wechat"
+
+	"github.com/gorilla/mux"
 
 	"flag"
 	"log"
@@ -39,9 +42,13 @@ func MustParseArgs() *Options {
 }
 
 func init() {
-	http.HandleFunc("/wx_callback", wechat.CallbackHandler)
-	http.HandleFunc("/ws/verifier", verifier.ServeVerifierWS)
-	http.HandleFunc("/ws/wall", wall.ServeWallWS)
+	r := mux.NewRouter()
+	r.HandleFunc("/wx_callback", wechat.CallbackHandler)
+	r.HandleFunc("/ws/verifier", verifier.ServeVerifierWS)
+	r.HandleFunc("/ws/wall", wall.ServeWallWS)
+	r.HandleFunc("/img/{image}", imager.ServeImage)
+
+	http.Handle("/", r)
 }
 
 func main() {
@@ -52,6 +59,7 @@ func main() {
 	verifier.Init(acfg)
 	wall.Init(acfg)
 	wechat.Init(acfg)
+	imager.Init(acfg)
 
 	log.Println(http.ListenAndServe("127.0.0.1:9999", nil))
 }

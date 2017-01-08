@@ -89,17 +89,13 @@ func handleVMsg(data []byte) error {
 		return errors.New("failed to get message info, maybe due to TTL timeout: " + err.Error())
 	}
 
-	// update last verified msg
-	updateLastVerifiedMsg(msg)
-
 	// pass set
 	if _, err := passSet.Add(msg.UserOpenid); err != nil {
 		log.Warning("failed to add user to passSet")
 	}
+
 	// update last verified msg
-	if err := lvmMap.Set(msg.UserOpenid, msg.Content); err != nil {
-		log.Warning("failed to save last verified message")
-	}
+	updateLastVerifiedMsg(msg)
 
 	msg.VerifiedTime = recvm.VerifiedTime
 	// publish to wechat wall (vMQ)

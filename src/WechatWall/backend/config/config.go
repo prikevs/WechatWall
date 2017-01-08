@@ -9,8 +9,13 @@ import (
 )
 
 const (
-	CONFIGJSON = "backend-config.json"
+	CONFIGJSON   = "backend-config.json"
+	COMMONCONFIG = "common-config.json"
 )
+
+type CommonConfig struct {
+	ImageDir string `json:"image_dir"`
+}
 
 type WechatConfig struct {
 	WXAppId            string   `json:"wx_app_id"`
@@ -39,6 +44,7 @@ type WallConfig struct {
 }
 
 type Config struct {
+	Common   CommonConfig
 	Wechat   WechatConfig
 	Verifier VerifierConfig
 	Wall     WallConfig
@@ -84,11 +90,26 @@ func MustGetConfigJson(dir string) []byte {
 	return data
 }
 
+func MustGetCommonConfigJson(dir string) []byte {
+	p := path.Join(dir, COMMONCONFIG)
+	data, err := ioutil.ReadFile(p)
+	if err != nil {
+		panic(err)
+	}
+	return data
+}
+
 func New(dir string) *Config {
 	jconfig := MustGetConfigJson(dir)
+	cconfig := MustGetCommonConfigJson(dir)
 	c := &Config{}
 	if err := json.Unmarshal([]byte(jconfig), c); err != nil {
 		panic(err)
 	}
+	com := &CommonConfig{}
+	if err := json.Unmarshal([]byte(cconfig), com); err != nil {
+		panic(err)
+	}
+	c.Common = *com
 	return c
 }

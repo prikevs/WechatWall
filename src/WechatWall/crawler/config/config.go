@@ -12,7 +12,7 @@ const (
 )
 
 type Config struct {
-	ImagePath     string `json:"image_path"`
+	ImageDir      string `json:"image_dir"`
 	PoolSize      int    `json:"pool_size"`
 	CrawlInterval int    `json:"crawl_interval"`
 

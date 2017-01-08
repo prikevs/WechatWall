@@ -16,7 +16,7 @@ func WriteFile(path string, data []byte) (err error) {
 }
 
 func BuildImagePath(cfg *config.Config, user *ucrawler.User) string {
-	return path.Join(cfg.ImagePath,
+	return path.Join(cfg.ImageDir,
 		GetFilename(user.UserOpenid, cfg.ImageSuffix))
 }
 
