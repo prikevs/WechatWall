@@ -51,6 +51,18 @@ func (h *Hub) run() {
 		// case verified := <-h.verified:
 		// verified message, handle here
 		case <-h.broadcast:
+			if !NeedVerification {
+				select {
+				case msg := <-h.readymsgs:
+					log.Info("you use non-verification mode, send message to vmq directly")
+					if err := libredis.PublishClassToMQ(&msg, vMQ); err != nil {
+						log.Error("failed to publish to the back of vmq:", err)
+						break
+					}
+				default:
+				}
+				break
+			}
 			for client := range h.clients {
 				var msg libredis.Msg
 				var empty bool

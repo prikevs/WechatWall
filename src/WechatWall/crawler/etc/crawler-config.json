@@ -1,6 +1,6 @@
 {
     "image_path":"/Users/kevince/Documents/others/gocrawler/src/WechatWall/crawler/data/images",
-    "token" : "433392960",
+    "token" : "2125244386",
 	"pool_size" : 10,
 	"crawl_interval": 10,
 	"image_suffix": "jpg",
@@ -19,6 +19,24 @@
         "fakeid":"",
         "token":"",
         "lang":"zh_CN"
+    },
+    "send_url":"https://mp.weixin.qq.com/cgi-bin/singlesend",
+    "send_params":{
+        "t": "ajax-response",
+        "f": "json",
+        "token":"",
+        "lang":"zh_CN"
+    },
+    "send_form": {
+        "token":"",
+        "lang":"zh_CN",
+        "f":"json",
+        "ajax":"1",
+        "random":"",
+        "type":"1",
+        "content":"",
+        "tofakeid":"",
+        "imagecode":""
     },
 
     "headers" : {

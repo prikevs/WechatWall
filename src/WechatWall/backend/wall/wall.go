@@ -13,6 +13,7 @@ package wall
 */
 
 import (
+	"WechatWall/backend/config"
 	"WechatWall/libredis"
 	"WechatWall/logger"
 
@@ -20,12 +21,16 @@ import (
 	"time"
 )
 
-var log = logger.GetLogger("wall")
+var log = logger.GetLogger("backend/wall")
 
 // config
 const (
+	TickWarnRound = 3
+)
+
+var (
 	SendToWallDuration = 2 * time.Second
-	TickWarnRound      = 3
+	ReliableMsg        = true
 )
 
 var (
@@ -45,9 +50,14 @@ func init() {
 	vMQ, err = libredis.GetVMQ()
 	FailOnError(err)
 
+}
+
+func Init(cfg *config.WallConfig) {
+	SendToWallDuration = time.Duration(cfg.SendToWallDuration) * time.Second
+	ReliableMsg = cfg.ReliableMsg
+
 	bc := make(chan bool)
 	wallmsgs := make(chan libredis.Msg)
-	// TODO: hub
 	hub = newHub(wallmsgs, bc)
 	go hub.run()
 	go tickWallBroadcastSignal(bc, SendToWallDuration)

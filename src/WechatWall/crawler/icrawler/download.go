@@ -8,7 +8,7 @@ import (
 	// "time"
 )
 
-var log = logger.GetLogger("crawler")
+var log = logger.GetLogger("crawler/icrawler")
 
 func Download(cfg *config.Config, user *ucrawler.User) {
 	ifetcher := NewIFetcher(cfg, user)

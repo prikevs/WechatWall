@@ -1,6 +1,7 @@
 package wechat
 
 import (
+	"WechatWall/backend/config"
 	"WechatWall/libredis"
 	"WechatWall/logger"
 
@@ -12,15 +13,15 @@ import (
 	"time"
 )
 
-var log = logger.GetLogger("wechat")
+var log = logger.GetLogger("backend/wechat")
 
-const (
-	wxAppId     = "wx9da3bbc39dab3cb8"
-	wxAppSecret = "2184fa375f62ef0e46a17c05d2682d35"
+var (
+	wxAppId     = ""
+	wxAppSecret = ""
 
-	wxOriId         = "gh_d592b39f8508"
-	wxToken         = "kevince"
-	wxEncodedAESKey = "VgGi6gG0orzxL0J9x4qYXg95nNBblZgLWhdeXcbW3wK"
+	wxOriId         = ""
+	wxToken         = ""
+	wxEncodedAESKey = ""
 )
 
 var (
@@ -33,6 +34,24 @@ var (
 	wxSet   libredis.Set
 	sentSet libredis.Set
 )
+
+func Init(cfg *config.WechatConfig) {
+	wxAppId = cfg.WXAppId
+	wxAppSecret = cfg.WXAppSecret
+	wxOriId = cfg.WXOriId
+	wxToken = cfg.WXToken
+	wxEncodedAESKey = cfg.WXEncodedAESKey
+
+	mux := core.NewServeMux()
+	mux.DefaultMsgHandleFunc(defaultMsgHandler)
+	mux.MsgHandleFunc(request.MsgTypeText, textMsgHandler)
+
+	mux.DefaultEventHandleFunc(defaultEventHandler)
+	mux.EventHandleFunc(request.EventTypeSubscribe, subscribeEventHandler)
+	mux.EventHandleFunc(request.EventTypeUnsubscribe, unsubscribeEventHandler)
+	msgHandler = mux
+	msgServer = core.NewServer(wxOriId, wxAppId, wxToken, wxEncodedAESKey, msgHandler, nil)
+}
 
 func FailOnError(err error) {
 	if err != nil {
@@ -55,19 +74,6 @@ func init() {
 	FailOnError(err)
 	sentSet, err = libredis.GetSentSet()
 	FailOnError(err)
-}
-
-func init() {
-	mux := core.NewServeMux()
-	mux.DefaultMsgHandleFunc(defaultMsgHandler)
-	mux.MsgHandleFunc(request.MsgTypeText, textMsgHandler)
-
-	mux.DefaultEventHandleFunc(defaultEventHandler)
-	mux.EventHandleFunc(request.EventTypeSubscribe, subscribeEventHandler)
-	mux.EventHandleFunc(request.EventTypeUnsubscribe, unsubscribeEventHandler)
-
-	msgHandler = mux
-	msgServer = core.NewServer(wxOriId, wxAppId, wxToken, wxEncodedAESKey, msgHandler, nil)
 }
 
 func textMsgHandler(ctx *core.Context) {

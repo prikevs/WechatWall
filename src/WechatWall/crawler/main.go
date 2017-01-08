@@ -4,6 +4,7 @@ import (
 	"WechatWall/crawler/config"
 	"WechatWall/crawler/filter"
 	"WechatWall/crawler/icrawler"
+	"WechatWall/crawler/sender"
 	"WechatWall/crawler/ucrawler"
 	"WechatWall/crawler/utils"
 	"WechatWall/logger"
@@ -22,7 +23,7 @@ type Options struct {
 func getCurrentDir() string {
 	dir, err := utils.CurrentDir()
 	if err != nil {
-		return ""
+		return "./"
 	}
 	return dir
 }
@@ -56,6 +57,10 @@ func start_ucrawler(cfg config.Config, usersch chan []ucrawler.User) {
 	}()
 }
 
+func start_sender(cfg config.Config) {
+	go sender.Run(&cfg)
+}
+
 func start_filter(cfg config.Config, usersch, usersch_filtered chan []ucrawler.User) {
 	go filter.Run(&cfg, usersch, usersch_filtered)
 }
@@ -69,6 +74,7 @@ func main() {
 	start_icrawler(*cfg, usersch_filtered)
 	start_filter(*cfg, usersch, usersch_filtered)
 	start_ucrawler(*cfg, usersch)
+	start_sender(*cfg)
 
 	forever := make(chan bool)
 	<-forever

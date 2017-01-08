@@ -2,6 +2,7 @@ package libredis
 
 import (
 	"encoding/json"
+	"errors"
 	"strconv"
 	"time"
 )
@@ -53,6 +54,17 @@ func SetClassToMapWithTTL(cls Class, mp Map, timeout time.Duration) error {
 	}
 	_, err := mp.SetTimeout(cls.Key(), timeout)
 	return err
+}
+
+func DelClassFromMap(cls Class, mp Map) error {
+	affected, err := mp.Del(cls.Key())
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return errors.New("failed to delete class, affected 0 elements")
+	}
+	return nil
 }
 
 func GetClassFromMap(k string, cls Class, mp Map) error {

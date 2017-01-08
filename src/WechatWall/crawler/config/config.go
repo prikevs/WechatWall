@@ -22,6 +22,9 @@ type Config struct {
 	ImageURL    string            `json:"image_url"`
 	ImageParams map[string]string `json:"image_params"`
 	ImageSuffix string            `json:"image_suffix"`
+	SendURL     string            `json:"send_url"`
+	SendParams  map[string]string `json:"send_params"`
+	SendForm    map[string]string `json:"send_form"`
 
 	Headers map[string]string
 }

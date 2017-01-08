@@ -20,6 +20,7 @@ package verifier
 */
 
 import (
+	"WechatWall/backend/config"
 	"WechatWall/libredis"
 	"WechatWall/logger"
 
@@ -27,13 +28,18 @@ import (
 	"time"
 )
 
-var log = logger.GetLogger("verifier")
+var log = logger.GetLogger("backend/verifier")
 
-const (
-	ReadyPipeSize            = 20
+// some config variables
+var (
+	ReadyPipSize             = 20
 	MaxMsgWaitingTime        = 5 * 60 * time.Second
 	SendVerificationDuration = 1 * time.Second
 	TickWarnRound            = 3
+	SendNotification         = true
+	NotificationMessage      = "消息已通过审核"
+	StrictOrigin             = false
+	NeedVerification         = true
 )
 
 var (
@@ -41,6 +47,7 @@ var (
 
 	pMQ      libredis.MQ
 	vMQ      libredis.MQ
+	sMQ      libredis.MQ
 	okSet    libredis.Set
 	pMsgsMap libredis.Map
 	usersMap libredis.Map
@@ -96,13 +103,25 @@ func init() {
 	FailOnError(err)
 	vMQ, err = libredis.GetVMQ()
 	FailOnError(err)
+	sMQ, err = libredis.GetSMQ()
+	FailOnError(err)
 	okSet, err = libredis.GetOKSet()
 	FailOnError(err)
 	pMsgsMap, err = libredis.GetPMsgsMap()
 	FailOnError(err)
 	usersMap, err = libredis.GetUsersMap()
+}
 
-	readymsgs := make(chan libredis.Msg, ReadyPipeSize)
+func Init(cfg *config.VerifierConfig) {
+	ReadyPipSize = cfg.ReadyPipSize
+	MaxMsgWaitingTime = time.Duration(cfg.MaxMsgWaitingTime) * time.Second
+	SendVerificationDuration = time.Duration(cfg.SendVerificationDuration) * time.Second
+	SendNotification = cfg.SendNotification
+	NotificationMessage = cfg.NotificationMessage
+	StrictOrigin = cfg.StrictOrigin
+	NeedVerification = cfg.NeedVerification
+
+	readymsgs := make(chan libredis.Msg, ReadyPipSize)
 	bc := make(chan bool)
 	hub = newHub(readymsgs, bc)
 	go hub.run()

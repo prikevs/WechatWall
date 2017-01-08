@@ -9,6 +9,7 @@ import (
 const (
 	PMQNAME = "queue:pmq" // MQ for pending messages
 	VMQNAME = "queue:vmq" // MQ for verified messages
+	SMQNAME = "queue:smq" // MQ for sending messages
 )
 
 type MQ interface {
@@ -55,4 +56,8 @@ func GetPMQ() (MQ, error) {
 
 func GetVMQ() (MQ, error) {
 	return GetMQ(VMQNAME)
+}
+
+func GetSMQ() (MQ, error) {
+	return GetMQ(SMQNAME)
 }
