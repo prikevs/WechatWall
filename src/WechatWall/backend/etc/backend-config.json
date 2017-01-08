@@ -14,7 +14,7 @@
 
     "verifier": {
         "ready_pip_size": 5,
-        "max_msg_waiting_time": 300,
+        "max_msg_waiting_time": 10,
         "send_verification_duration": 1,
         "send_notification": true,
         "notification_message": "您的消息 %s 已通过审核，即将上墙，谢谢您的祝福！",

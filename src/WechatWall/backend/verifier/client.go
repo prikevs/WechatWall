@@ -74,11 +74,7 @@ func updateLastVerifiedMsg(msg *libredis.Msg) {
 	}
 }
 
-func handleVMsg(data []byte) error {
-	recvm := &VMsgRecvd{}
-	if err := json.Unmarshal(data, recvm); err != nil {
-		return err
-	}
+func handleVMsg(recvm *VMsgRecvd) error {
 	if recvm.MsgId == "" {
 		return errors.New("invalid parameter msgid")
 	}
@@ -145,10 +141,28 @@ func (c *Client) readPump() {
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 
 		log.Debug("received message:", string(message))
-		// parse this message and add it to vqueue
-		if err := handleVMsg(message); err != nil {
-			log.Error("cannot handle message: ", err)
+
+		// parse this message and add it to vqueue, make response at the same time
+		recvm := &VMsgRecvd{}
+		if err := json.Unmarshal(message, recvm); err != nil {
+			log.Error(err)
+			continue
 		}
+
+		respm := &VMsgResp{
+			MsgId:   recvm.MsgId,
+			RetCode: 200,
+		}
+		if err := handleVMsg(recvm); err != nil {
+			log.Error("cannot handle message:", err)
+			respm.RetCode = 500
+			respm.ErrMsg = err.Error()
+		}
+		data, err := json.Marshal(respm)
+		if err != nil {
+			log.Warning("cannot parse response message:", err)
+		}
+		c.send <- data
 	}
 }
 

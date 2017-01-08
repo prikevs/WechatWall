@@ -87,6 +87,7 @@ func InitConsole(acfg *config.AtomicConfig) {
 type Console interface {
 	CmdQuery([]string) string
 	CmdSet([]string) string
+	CmdHelp([]string) string
 }
 
 const (
@@ -96,34 +97,36 @@ const (
 	Success          = "command execute successfully"
 )
 
+func SetConfig(acfg *config.AtomicConfig, setter func(cfg *config.Config)) string {
+	cfg := config.LoadCfgFromACfg(acfg)
+	if cfg == nil {
+		return ErrInternalError
+	}
+	setter(cfg)
+	acfg.StoreConfig(*cfg)
+	return Success
+}
+
 func (this *AdminConsole) CmdSet(cmds []string) string {
 	if len(cmds) == 0 {
 		return ErrInvalidCmd
 	}
 	switch cmds[0] {
-	case "needn":
+	case "sendn":
 		if len(cmds[1:]) != 1 {
 			return ErrInvalidCmd
 		}
 		switch cmds[1] {
 		case "on":
 			log.Info("ADMIN set send notification on")
-			cfg := config.LoadCfgFromACfg(this.acfg)
-			if cfg == nil {
-				return ErrInternalError
-			}
-			cfg.Verifier.SendNotification = true
-			this.acfg.StoreConfig(*cfg)
-			return Success
+			return SetConfig(this.acfg, func(cfg *config.Config) {
+				cfg.Verifier.SendNotification = true
+			})
 		case "off":
 			log.Info("ADMIN set send notification off")
-			cfg := config.LoadCfgFromACfg(this.acfg)
-			if cfg == nil {
-				return ErrInternalError
-			}
-			cfg.Verifier.SendNotification = false
-			this.acfg.StoreConfig(*cfg)
-			return Success
+			return SetConfig(this.acfg, func(cfg *config.Config) {
+				cfg.Verifier.SendNotification = false
+			})
 		default:
 			return ErrInvalidCmd
 		}
@@ -133,10 +136,20 @@ func (this *AdminConsole) CmdSet(cmds []string) string {
 		}
 		switch cmds[1] {
 		case "on":
+			log.Info("ADMIN set need verification on")
+			return SetConfig(this.acfg, func(cfg *config.Config) {
+				cfg.Verifier.NeedVerification = true
+			})
 		case "off":
+			log.Info("ADMIN set send verification off")
+			return SetConfig(this.acfg, func(cfg *config.Config) {
+				cfg.Verifier.NeedVerification = false
+			})
 		default:
 			return ErrInvalidCmd
 		}
+	case "ttl":
+	case "svd":
 
 	}
 
@@ -145,6 +158,62 @@ func (this *AdminConsole) CmdSet(cmds []string) string {
 
 func (this *UserConsole) CmdSet(cmds []string) string {
 	return ErrUnauthorized
+}
+
+func (this *AdminConsole) CmdHelp(cmds []string) string {
+	return this.UserConsole.CmdHelp(cmds) + `Admin Console Help:
+query/q/?
+ttl:
+    current ttl of unverified message
+svd:
+    current duration of sending message to verification
+sendn:
+    current status of if sending notification
+needv:
+    current status of if needing verification
+
+set/s
+ttl <int>:
+    set ttl of unverified message (in seconds)
+svd <int>:
+    set duration of sending message to verification (in seconds)
+sendn <on/off>:
+    set sending notification on/off
+needv <on/off>:
+    set needing verification on/off
+`
+}
+
+func (this *UserConsole) CmdHelp(cmds []string) string {
+	return `Console Help:
+query/q/?
+vmq:
+    length of MQ for verified messages
+pmq:
+    length of MQ for pending messages
+ow:
+    number of messages already on wall
+pass:
+    number of users have messages passed verification
+
+`
+
+}
+
+func (this *AdminConsole) CmdQuery(cmds []string) string {
+	if len(cmds) == 0 {
+		return ErrInvalidCmd
+	}
+	result := this.UserConsole.CmdQuery(cmds)
+	if result == ErrInvalidCmd {
+		switch cmds[0] {
+		case "ttl":
+		case "svd":
+		case "sendn":
+		case "needv":
+		}
+	}
+	return result
 }
 
 func (this *UserConsole) CmdQuery(cmds []string) string {
@@ -194,6 +263,8 @@ func handleCommand(openid string, cmdbuf string) string {
 	var result string
 
 	switch cmds[0] {
+	case "h":
+		result = con.CmdHelp(cmds[1:])
 	case "q":
 		fallthrough
 	case "?":

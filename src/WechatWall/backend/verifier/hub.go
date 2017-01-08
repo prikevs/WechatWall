@@ -96,6 +96,7 @@ func (h *Hub) run() {
 					CreateTime: msg.CreateTime,
 					Content:    msg.Content,
 					ImgUrl:     utils.BuildImagePath(msg.UserOpenid),
+					TTL:        int64(LoadMaxMsgWaitingTime().Seconds() * 1000),
 				}
 				data, err := json.Marshal(vmsg)
 				if err != nil {

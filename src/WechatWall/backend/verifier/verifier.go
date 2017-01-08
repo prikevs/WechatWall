@@ -98,13 +98,14 @@ var (
 
 // verification message to send
 type VMsgSent struct {
-	Username   string
-	Openid     string
+	Username   string `json:username`
+	Openid     string `json:"openid"`
 	MsgId      string `json:"msg_id"`
 	MsgType    string `json:"msg_type"`
 	CreateTime int64  `json:"create_time"`
-	Content    string
+	Content    string `json:"content"`
 	ImgUrl     string `json:"img_url"`
+	TTL        int64  `json:"ttl"`
 }
 
 // verification message to receive
@@ -112,6 +113,12 @@ type VMsgRecvd struct {
 	MsgId        string `json:"msg_id"`
 	VerifiedTime int64  `json:"verified_time"`
 	ShowNow      bool   `json:"show_now"`
+}
+
+type VMsgResp struct {
+	MsgId   string `json:"msg_id"`
+	RetCode int    `json:"ret_code"`
+	ErrMsg  string `json:"err_msg"`
 }
 
 func FailOnError(err error) {
