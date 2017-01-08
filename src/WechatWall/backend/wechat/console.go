@@ -6,6 +6,7 @@ import (
 
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -97,12 +98,12 @@ const (
 	Success          = "command execute successfully"
 )
 
-func SetConfig(acfg *config.AtomicConfig, setter func(cfg *config.Config)) string {
+func SetConfig(acfg *config.AtomicConfig, val interface{}, setter func(cfg *config.Config, val interface{})) string {
 	cfg := config.LoadCfgFromACfg(acfg)
 	if cfg == nil {
 		return ErrInternalError
 	}
-	setter(cfg)
+	setter(cfg, val)
 	acfg.StoreConfig(*cfg)
 	return Success
 }
@@ -119,14 +120,16 @@ func (this *AdminConsole) CmdSet(cmds []string) string {
 		switch cmds[1] {
 		case "on":
 			log.Info("ADMIN set send notification on")
-			return SetConfig(this.acfg, func(cfg *config.Config) {
-				cfg.Verifier.SendNotification = true
-			})
+			return SetConfig(this.acfg, true,
+				func(cfg *config.Config, val interface{}) {
+					cfg.Verifier.SendNotification = val.(bool)
+				})
 		case "off":
 			log.Info("ADMIN set send notification off")
-			return SetConfig(this.acfg, func(cfg *config.Config) {
-				cfg.Verifier.SendNotification = false
-			})
+			return SetConfig(this.acfg, false,
+				func(cfg *config.Config, val interface{}) {
+					cfg.Verifier.SendNotification = val.(bool)
+				})
 		default:
 			return ErrInvalidCmd
 		}
@@ -137,18 +140,32 @@ func (this *AdminConsole) CmdSet(cmds []string) string {
 		switch cmds[1] {
 		case "on":
 			log.Info("ADMIN set need verification on")
-			return SetConfig(this.acfg, func(cfg *config.Config) {
-				cfg.Verifier.NeedVerification = true
-			})
+			return SetConfig(this.acfg, true,
+				func(cfg *config.Config, val interface{}) {
+					cfg.Verifier.NeedVerification = val.(bool)
+				})
 		case "off":
 			log.Info("ADMIN set send verification off")
-			return SetConfig(this.acfg, func(cfg *config.Config) {
-				cfg.Verifier.NeedVerification = false
-			})
+			return SetConfig(this.acfg, false,
+				func(cfg *config.Config, val interface{}) {
+					cfg.Verifier.NeedVerification = val.(bool)
+				})
 		default:
 			return ErrInvalidCmd
 		}
 	case "ttl":
+		if len(cmds[1:]) != 1 {
+			return ErrInvalidCmd
+		}
+		ttl, err := strconv.Atoi(cmds[1])
+		if err != nil {
+			return ErrInvalidCmd
+		}
+		return SetConfig(this.acfg, ttl,
+			func(cfg *config.Config, val interface{}) {
+				cfg.Verifier.MaxMsgWaitingTime = val.(int)
+			})
+
 	case "svd":
 
 	}
@@ -197,7 +214,14 @@ pass:
     number of users have messages passed verification
 
 `
+}
 
+func GetConfig(acfg *config.AtomicConfig, getter func(cfg *config.Config) interface{}) interface{} {
+	cfg := config.LoadCfgFromACfg(acfg)
+	if cfg == nil {
+		return ErrInternalError
+	}
+	return getter(cfg)
 }
 
 func (this *AdminConsole) CmdQuery(cmds []string) string {
@@ -208,6 +232,11 @@ func (this *AdminConsole) CmdQuery(cmds []string) string {
 	if result == ErrInvalidCmd {
 		switch cmds[0] {
 		case "ttl":
+			ttl := GetConfig(this.acfg,
+				func(cfg *config.Config) interface{} {
+					return cfg.Verifier.MaxMsgWaitingTime
+				}).(int)
+			result = fmt.Sprintf("current TTL is: %d", ttl)
 		case "svd":
 		case "sendn":
 		case "needv":
