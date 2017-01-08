@@ -32,15 +32,56 @@ var log = logger.GetLogger("backend/verifier")
 
 // some config variables
 var (
-	ReadyPipSize             = 20
-	MaxMsgWaitingTime        = 5 * 60 * time.Second
-	SendVerificationDuration = 1 * time.Second
-	TickWarnRound            = 3
-	SendNotification         = true
-	NotificationMessage      = "消息已通过审核"
-	StrictOrigin             = false
-	NeedVerification         = true
+	ReadyPipSize        = 20
+	TickWarnRound       = 3
+	NotificationMessage = "消息已通过审核"
+	StrictOrigin        = false
+
+	dMaxMsgWaitingTime        = 5 * 60 * time.Second
+	dSendVerificationDuration = 1 * time.Second
+	dSendNotification         = true
+	dNeedVerification         = true
+
+	ACfg *config.AtomicConfig
 )
+
+func LoadNeedVerification() bool {
+	cfg := config.LoadCfgFromACfg(ACfg)
+	if cfg == nil {
+		return dNeedVerification
+	}
+	return cfg.Verifier.NeedVerification
+}
+
+func LoadSendNotification() bool {
+	cfg := config.LoadCfgFromACfg(ACfg)
+	if cfg == nil {
+		return dSendNotification
+	}
+	return cfg.Verifier.SendNotification
+}
+
+func LoadSendVerificationDuration() time.Duration {
+	cfg := config.LoadCfgFromACfg(ACfg)
+	if cfg == nil {
+		return dSendVerificationDuration
+	}
+	if cfg.Verifier.SendVerificationDuration == 0 {
+		return dSendVerificationDuration
+	}
+	return time.Duration(cfg.Verifier.SendVerificationDuration) * time.Second
+}
+
+func LoadMaxMsgWaitingTime() time.Duration {
+	cfg := config.LoadCfgFromACfg(ACfg)
+	if cfg == nil {
+		return dMaxMsgWaitingTime
+	}
+	if cfg.Verifier.MaxMsgWaitingTime == 0 {
+		return dMaxMsgWaitingTime
+	}
+	return time.Duration(cfg.Verifier.MaxMsgWaitingTime) * time.Second
+}
 
 var (
 	hub *Hub
@@ -49,6 +90,8 @@ var (
 	vMQ      libredis.MQ
 	sMQ      libredis.MQ
 	okSet    libredis.Set
+	passSet  libredis.Set
+	lvmMap   libredis.Map
 	pMsgsMap libredis.Map
 	usersMap libredis.Map
 )
@@ -57,7 +100,7 @@ var (
 type VMsgSent struct {
 	Username   string
 	Openid     string
-	MsgId      int64  `json:"msg_id"`
+	MsgId      string `json:"msg_id"`
 	MsgType    string `json:"msg_type"`
 	CreateTime int64  `json:"create_time"`
 	Content    string
@@ -66,9 +109,9 @@ type VMsgSent struct {
 
 // verification message to receive
 type VMsgRecvd struct {
-	MsgId        int64 `json:"msg_id"`
-	VerifiedTime int64 `json:"verified_time"`
-	ShowNow      bool  `json:"show_now"`
+	MsgId        string `json:"msg_id"`
+	VerifiedTime int64  `json:"verified_time"`
+	ShowNow      bool   `json:"show_now"`
 }
 
 func FailOnError(err error) {
@@ -107,26 +150,32 @@ func init() {
 	FailOnError(err)
 	okSet, err = libredis.GetOKSet()
 	FailOnError(err)
+	passSet, err = libredis.GetPassSet()
+	FailOnError(err)
 	pMsgsMap, err = libredis.GetPMsgsMap()
 	FailOnError(err)
 	usersMap, err = libredis.GetUsersMap()
+	FailOnError(err)
+	lvmMap, err = libredis.GetLVMMap()
+	FailOnError(err)
 }
 
-func Init(cfg *config.VerifierConfig) {
-	ReadyPipSize = cfg.ReadyPipSize
-	MaxMsgWaitingTime = time.Duration(cfg.MaxMsgWaitingTime) * time.Second
-	SendVerificationDuration = time.Duration(cfg.SendVerificationDuration) * time.Second
-	SendNotification = cfg.SendNotification
-	NotificationMessage = cfg.NotificationMessage
-	StrictOrigin = cfg.StrictOrigin
-	NeedVerification = cfg.NeedVerification
+func Init(acfg *config.AtomicConfig) {
+	ACfg = acfg
+
+	cfg := config.LoadCfgFromACfg(acfg)
+	if cfg != nil {
+		ReadyPipSize = cfg.Verifier.ReadyPipSize
+		NotificationMessage = cfg.Verifier.NotificationMessage
+		StrictOrigin = cfg.Verifier.StrictOrigin
+	}
 
 	readymsgs := make(chan libredis.Msg, ReadyPipSize)
 	bc := make(chan bool)
 	hub = newHub(readymsgs, bc)
 	go hub.run()
 	go prepareMsgs(readymsgs)
-	go tickBroadcastSignal(bc, SendVerificationDuration)
+	go tickBroadcastSignal(bc, LoadSendVerificationDuration())
 }
 
 func prepareMsgs(readymsgs chan<- libredis.Msg) {

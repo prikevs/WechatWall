@@ -6,12 +6,15 @@ import (
 
 const (
 	OKSETNAME      = "set:ok"
+	OWSETNAME      = "set:ow" // messages on wall set
 	WXSETNAME      = "set:wx"
+	PASSSETNAME    = "set:pass"
 	SENTSETNAME    = "set:sent"
 	LOTTERYSETNAME = "set:lottery"
 )
 
 type Set interface {
+	Total() (int64, error)
 	GetSetName() string
 	Members() ([]string, error)
 	IsMember(string) (bool, error)
@@ -23,6 +26,10 @@ type Set interface {
 type mSet struct {
 	Name   string
 	Client *redis.Client
+}
+
+func (this *mSet) Total() (int64, error) {
+	return this.Client.SCard(this.Name).Result()
 }
 
 func (this *mSet) GetSetName() string {
@@ -85,10 +92,18 @@ func GetOKSet() (Set, error) {
 	return GetSet(OKSETNAME)
 }
 
+func GetPassSet() (Set, error) {
+	return GetSet(PASSSETNAME)
+}
+
 func GetWXSet() (Set, error) {
 	return GetSet(WXSETNAME)
 }
 
 func GetSentSet() (Set, error) {
 	return GetSet(SENTSETNAME)
+}
+
+func GetOWSet() (Set, error) {
+	return GetSet(OWSETNAME)
 }

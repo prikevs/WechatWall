@@ -47,10 +47,11 @@ func init() {
 func main() {
 	opts := MustParseArgs()
 	cfg := config.New(opts.CfgDir)
+	acfg := config.NewAtomicConfig(cfg)
 
-	verifier.Init(&cfg.Verifier)
-	wall.Init(&cfg.Wall)
-	wechat.Init(&cfg.Wechat)
+	verifier.Init(acfg)
+	wall.Init(acfg)
+	wechat.Init(acfg)
 
 	log.Println(http.ListenAndServe("127.0.0.1:9999", nil))
 }

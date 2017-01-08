@@ -18,9 +18,10 @@ type Class interface {
 }
 
 type User struct {
-	UserOpenid     string `json:"user_openid"`
-	UserName       string `json:"user_name"`
-	UserCreateTime int64  `json:"user_create_time"`
+	UserOpenid      string `json:"user_openid"`
+	UserName        string `json:"user_name"`
+	UserCreateTime  int64  `json:"user_create_time"`
+	LastVerifiedMsg string `json:"last_verified_msg"`
 }
 
 func (this *User) Key() string {

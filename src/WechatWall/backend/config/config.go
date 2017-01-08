@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"path"
+	"sync"
+	"sync/atomic"
 )
 
 const (
@@ -11,13 +13,14 @@ const (
 )
 
 type WechatConfig struct {
-	WXAppId            string `json:"wx_app_id"`
-	WXAppSecret        string `json:"wx_app_secret"`
-	WXOriId            string `json:"wx_ori_id"`
-	WXToken            string `json:"wx_token"`
-	WXEncodedAESKey    string `json:"wx_encoded_aes_key"`
-	MessageOnSubscribe string `json:"message_on_subscribe"`
-	MessageOnReceived  string `json:"message_on_received"`
+	WXAppId            string   `json:"wx_app_id"`
+	WXAppSecret        string   `json:"wx_app_secret"`
+	WXOriId            string   `json:"wx_ori_id"`
+	WXToken            string   `json:"wx_token"`
+	WXEncodedAESKey    string   `json:"wx_encoded_aes_key"`
+	MessageOnSubscribe string   `json:"message_on_subscribe"`
+	MessageOnReceived  string   `json:"message_on_received"`
+	AdminList          []string `json:"admin_list"`
 }
 
 type VerifierConfig struct {
@@ -39,6 +42,37 @@ type Config struct {
 	Wechat   WechatConfig
 	Verifier VerifierConfig
 	Wall     WallConfig
+}
+
+type AtomicConfig struct {
+	v  *atomic.Value
+	mu sync.Mutex
+}
+
+func NewAtomicConfig(cfg *Config) *AtomicConfig {
+	var v atomic.Value
+	v.Store(cfg)
+	return &AtomicConfig{
+		v: &v,
+	}
+}
+
+func (this *AtomicConfig) LoadConfig() *Config {
+	return this.v.Load().(*Config)
+}
+
+func (this *AtomicConfig) StoreConfig(cfg Config) {
+	this.mu.Lock()
+	defer this.mu.Unlock()
+
+	this.v.Store(&cfg)
+}
+
+func LoadCfgFromACfg(acfg *AtomicConfig) *Config {
+	if acfg == nil {
+		return nil
+	}
+	return acfg.LoadConfig()
 }
 
 func MustGetConfigJson(dir string) []byte {

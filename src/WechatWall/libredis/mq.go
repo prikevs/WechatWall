@@ -13,6 +13,7 @@ const (
 )
 
 type MQ interface {
+	Length() (int64, error)
 	Publish(msg string) error
 	PublishR(msg string) error
 	Consume(time.Duration) (string, error)
@@ -21,6 +22,11 @@ type MQ interface {
 type mMQ struct {
 	Name   string
 	Client *redis.Client
+}
+
+func (this *mMQ) Length() (result int64, err error) {
+	result, err = this.Client.LLen(this.Name).Result()
+	return
 }
 
 func (this *mMQ) Publish(msg string) error {
