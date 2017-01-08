@@ -8,7 +8,7 @@ import (
 	"WechatWall/logger"
 )
 
-var log = logger.GetLogger("crawler")
+var log = logger.GetLogger("crawler/filter")
 
 var (
 	okset libredis.Set
@@ -57,10 +57,10 @@ func init() {
 
 // return true if need to be crawled
 func checkUser(cfg *config.Config, user *ucrawler.User) bool {
-	log.Debug("starting to check users")
+	// log.Debug("starting to check users")
 
 	// if in ok set
-	log.Debug("check if user", user.UserOpenid, "in ok set")
+	// log.Debug("check if user", user.UserOpenid, "in ok set")
 	ismem, err := okset.IsMember(user.UserOpenid)
 	if err != nil {
 		log.Critical("failed to check if user ok,", err)
@@ -68,12 +68,12 @@ func checkUser(cfg *config.Config, user *ucrawler.User) bool {
 	}
 
 	if ismem {
-		log.Debug("user", user.UserOpenid, "in ok set, skip")
+		// log.Debug("user", user.UserOpenid, "in ok set, skip")
 		return false
 	}
 
 	// set userinfo to usersmap
-	log.Debug("set user", user.UserOpenid, "to usersmap")
+	// log.Debug("set user", user.UserOpenid, "to usersmap")
 	um := &libredis.User{
 		UserOpenid:     user.UserOpenid,
 		UserName:       user.UserName,
@@ -86,7 +86,7 @@ func checkUser(cfg *config.Config, user *ucrawler.User) bool {
 	}
 
 	// delete from wxset
-	log.Debug("delete user", user.UserOpenid, "from wxset")
+	// log.Debug("delete user", user.UserOpenid, "from wxset")
 	affected, err := wxset.Del(user.UserOpenid)
 	if err != nil {
 		log.Critical("failed to del user from wx set,", err)
@@ -96,7 +96,7 @@ func checkUser(cfg *config.Config, user *ucrawler.User) bool {
 	if affected > 0 {
 		log.Info("delete", affected, "elements from wxset")
 	} else {
-		log.Debug("nothing to do with wxset")
+		// log.Debug("nothing to do with wxset")
 	}
 
 	// check if ready to okset
@@ -108,9 +108,9 @@ func checkUser(cfg *config.Config, user *ucrawler.User) bool {
 			return originCheck(cfg, user)
 		}
 		if affected > 0 {
-			log.Debug("add, success to ADD")
+			// log.Debug("add, success to ADD")
 		} else {
-			log.Debug("add, already exist")
+			// log.Debug("add, already exist")
 		}
 		return false
 	}

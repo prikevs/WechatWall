@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -32,9 +33,16 @@ var (
 	space   = []byte{' '}
 )
 
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
+var upgrader websocket.Upgrader
+
+func init() {
+	upgrader = websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+	}
+	if !StrictOrigin {
+		upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+	}
 }
 
 // Client is a middleman between the websocket connection and the hub.
@@ -46,6 +54,18 @@ type Client struct {
 
 	// Buffered channel of outbound messages.
 	send chan []byte
+}
+
+func sendNotification(msg libredis.Msg) {
+	content := fmt.Sprintf(NotificationMessage, msg.Content)
+	ntf := &libredis.Msg{
+		UserOpenid: msg.UserOpenid,
+		Content:    content,
+	}
+	if err := libredis.PublishClassToMQ(ntf, sMQ); err != nil {
+		log.Error("failed to publish message to smq,", err)
+		return
+	}
 }
 
 func handleVMsg(data []byte) error {
@@ -74,6 +94,15 @@ func handleVMsg(data []byte) error {
 		}
 	}
 	log.Info("Added message from user", msg.Username, "openid:", msg.UserOpenid, "to VMQ")
+
+	if SendNotification {
+		// send message to smq, notify user that msg sent
+		go sendNotification(*msg)
+	}
+	// delete message from pMsgsMap
+	if err := libredis.DelClassFromMap(msg, pMsgsMap); err != nil {
+		log.Warning("failed to delete msg from pending msgs map, we can wait for TTL")
+	}
 	return nil
 }
 

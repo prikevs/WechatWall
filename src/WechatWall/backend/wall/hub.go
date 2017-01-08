@@ -34,6 +34,7 @@ func newHub(wallmsgs <-chan libredis.Msg, bc chan bool) *Hub {
 }
 
 func (h *Hub) run() {
+	reuse := make(chan libredis.Msg, 2)
 	for {
 		select {
 		case client := <-h.register:
@@ -47,6 +48,8 @@ func (h *Hub) run() {
 			var msg libredis.Msg
 			empty := false
 			select {
+			case msg = <-reuse:
+				break
 			case msg = <-h.wallmsgs:
 			default:
 				empty = true
@@ -54,6 +57,12 @@ func (h *Hub) run() {
 
 			// no message got, break
 			if empty {
+				break
+			}
+
+			if ReliableMsg && len(h.clients) == 0 {
+				log.Info("there is no wall now, reuse message.")
+				reuse <- msg
 				break
 			}
 

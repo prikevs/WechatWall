@@ -5,7 +5,7 @@ import (
 	"WechatWall/logger"
 )
 
-var log = logger.GetLogger("crawler")
+var log = logger.GetLogger("crawler/ucrawler")
 
 func Run(cfg *config.Config, usersch chan []User) {
 	fetcher := NewFetcher(cfg)
@@ -19,8 +19,8 @@ func Run(cfg *config.Config, usersch chan []User) {
 
 	users, err := Parse(resp)
 	if err != nil {
-		log.Error("failed to parse, ", err.Error())
-		log.Debug("resp string: ", string(resp), "\nbytes: ", resp)
+		log.Error("failed to parse,", err.Error(), string(resp))
+		log.Debug("resp bytes:", resp)
 		return
 	}
 
