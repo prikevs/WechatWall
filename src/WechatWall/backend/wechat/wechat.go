@@ -22,6 +22,9 @@ var (
 	wxOriId         = ""
 	wxToken         = ""
 	wxEncodedAESKey = ""
+
+	MessageOnSubscribe = ""
+	MessageOnReceived  = ""
 )
 
 var (
@@ -41,6 +44,8 @@ func Init(cfg *config.WechatConfig) {
 	wxOriId = cfg.WXOriId
 	wxToken = cfg.WXToken
 	wxEncodedAESKey = cfg.WXEncodedAESKey
+	MessageOnSubscribe = cfg.MessageOnSubscribe
+	MessageOnReceived = cfg.MessageOnReceived
 
 	mux := core.NewServeMux()
 	mux.DefaultMsgHandleFunc(defaultMsgHandler)
@@ -100,7 +105,7 @@ func textMsgHandler(ctx *core.Context) {
 	FailOnError(err)
 
 	// TODO: Add suitable response
-	resp := response.NewText(msg.FromUserName, msg.ToUserName, msg.CreateTime, msg.Content)
+	resp := response.NewText(msg.FromUserName, msg.ToUserName, msg.CreateTime, MessageOnReceived)
 	//ctx.RawResponse(resp) // 明文回复
 	ctx.AESResponse(resp, 0, "", nil) // aes密文回复
 }

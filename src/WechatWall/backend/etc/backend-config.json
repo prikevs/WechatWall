@@ -4,7 +4,9 @@
         "wx_app_secret":"2184fa375f62ef0e46a17c05d2682d35",
         "wx_ori_id":"gh_d592b39f8508",
         "wx_token":"kevince",
-        "wx_encoded_aes_key":"VgGi6gG0orzxL0J9x4qYXg95nNBblZgLWhdeXcbW3wK"
+        "wx_encoded_aes_key":"VgGi6gG0orzxL0J9x4qYXg95nNBblZgLWhdeXcbW3wK",
+        "message_on_subscribe": "欢迎关注！",
+        "message_on_received": "您的消息已收到，通过筛选后会上墙显示"
     },
 
     "verifier": {
@@ -12,13 +14,13 @@
         "max_msg_waiting_time": 300,
         "send_verification_duration": 1,
         "send_notification": true,
-        "notification_message": "您的消息  已通过审核，即将上墙，谢谢您的祝福！",
+        "notification_message": "您的消息 %s 已通过审核，即将上墙，谢谢您的祝福！",
         "strict_origin": false,
-        "need_verification": false
+        "need_verification": true
     },
 
     "wall": {
         "send_to_wall_duration": 2,
-        "reliable_msg": false
+        "reliable_msg": true
     }
 }

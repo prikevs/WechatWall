@@ -11,11 +11,13 @@ const (
 )
 
 type WechatConfig struct {
-	WXAppId         string `json:"wx_app_id"`
-	WXAppSecret     string `json:"wx_app_secret"`
-	WXOriId         string `json:"wx_ori_id"`
-	WXToken         string `json:"wx_token"`
-	WXEncodedAESKey string `json:"wx_encoded_aes_key"`
+	WXAppId            string `json:"wx_app_id"`
+	WXAppSecret        string `json:"wx_app_secret"`
+	WXOriId            string `json:"wx_ori_id"`
+	WXToken            string `json:"wx_token"`
+	WXEncodedAESKey    string `json:"wx_encoded_aes_key"`
+	MessageOnSubscribe string `json:"message_on_subscribe"`
+	MessageOnReceived  string `json:"message_on_received"`
 }
 
 type VerifierConfig struct {
