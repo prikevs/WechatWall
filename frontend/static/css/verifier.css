@@ -48,7 +48,7 @@ body {
     display: block;
     width: 36px;
     height: 36px;
-    background-image: url('../static/img/close.png');
+    background-image: url('../img/close.png');
     background-size:cover;
     position: absolute;
     right: 10px;
