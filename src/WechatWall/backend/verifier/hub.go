@@ -109,16 +109,65 @@ func (h *Hub) handleBroadcast() {
 			h.reuse <- msg
 		}
 	}
+}
 
+func (h *Hub) handleRegister(client *Client) {
+	log.Info("another verifier comes online", client, "send TTL messages")
+	h.clients[client] = true
+	// TODO: send all pending messages
+	keys, err := pMsgsMap.Keys()
+	if err != nil {
+		log.Warning("failed to get keys of pending messages map")
+		return
+	}
+	vmsgs := make([]*VMsgSent, 0)
+	for _, key := range keys {
+		msg := &libredis.Msg{}
+		if err := libredis.GetClassFromMap(key, msg, pMsgsMap); err != nil {
+			log.Warning("failed to load waiting message,", key)
+			continue
+		}
+		ttl, err := pMsgsMap.TTL(key)
+		if err != nil {
+			ttl = LoadMaxMsgWaitingTime()
+			log.Warning("cannot get TTL for message", msg.Key(), "use default")
+		}
+		vmsg := &VMsgSent{
+			Username:   msg.Username,
+			Openid:     msg.UserOpenid,
+			MsgId:      msg.Key(),
+			MsgType:    msg.MsgType,
+			CreateTime: msg.CreateTime,
+			Content:    msg.Content,
+			ImgUrl:     utils.BuildImagePath(msg.UserOpenid),
+			TTL:        int64(ttl.Seconds() * 1000),
+		}
+		vmsgs = append(vmsgs, vmsg)
+	}
+	for _, vmsg := range vmsgs {
+		data, err := json.Marshal(vmsg)
+		if err != nil {
+			log.Warningf("message from %s failed to encode to json",
+				vmsg.Openid)
+			continue
+		}
+		select {
+		case client.send <- []byte(data):
+			log.Info("msg", vmsg.MsgId, "sent to new registered verifier")
+		default:
+			log.Warning("something happened when writing to verifier",
+				client, "make it offline")
+			close(client.send)
+			delete(h.clients, client)
+		}
+	}
 }
 
 func (h *Hub) run() {
 	for {
 		select {
 		case client := <-h.register:
-			log.Info("another verifier comes online,", client)
-			h.clients[client] = true
-			// TODO: send all pending messages
+			h.handleRegister(client)
 		case client := <-h.unregister:
 			if _, ok := h.clients[client]; ok {
 				log.Info("verifier,", client, "goes offline")

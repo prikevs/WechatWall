@@ -3,6 +3,7 @@ package libredis
 import (
 	"gopkg.in/redis.v5"
 
+	"strings"
 	"time"
 )
 
@@ -17,14 +18,21 @@ type Map interface {
 	Set(string, string) error
 	SetTimeout(string, time.Duration) (bool, error)
 	Get(string) (string, error)
+	Keys() ([]string, error)
 	Size() (int64, error)
 	Exists(string) (bool, error)
 	Del(string) (int64, error)
+	TTL(string) (time.Duration, error)
 }
 
 type mMap struct {
 	Prefix string
 	Client *redis.Client
+}
+
+func (this *mMap) TTL(k string) (time.Duration, error) {
+	key := this.Key(k)
+	return this.Client.TTL(key).Result()
 }
 
 func (this *mMap) Size() (int64, error) {
@@ -44,6 +52,27 @@ func (this *mMap) Size() (int64, error) {
 	}
 
 	return n, nil
+}
+
+func (this *mMap) Keys() ([]string, error) {
+	var cursor uint64
+	result := make([]string, 0)
+	for {
+		var keys []string
+		var err error
+		keys, cursor, err = this.Client.Scan(cursor, this.Prefix+"*", 10).Result()
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, keys...)
+		if cursor == 0 {
+			break
+		}
+	}
+	for k, v := range result {
+		result[k] = strings.TrimPrefix(v, this.Prefix)
+	}
+	return result, nil
 }
 
 func (this *mMap) Key(k string) string {

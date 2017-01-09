@@ -291,6 +291,8 @@ sendn:
     current status of if sending notification
 needv:
     current status of if needing verification
+replay:
+	current status of replay
 
 set/s
 lmode:
@@ -305,6 +307,8 @@ sendn <on/off>:
     set sending notification on/off
 needv <on/off>:
     set needing verification on/off
+replay <on/off>:
+    set replay mode on/off
 `
 }
 

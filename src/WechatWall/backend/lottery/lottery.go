@@ -7,6 +7,7 @@ import (
 	"WechatWall/logger"
 
 	"encoding/json"
+	"math/rand"
 	"net/http"
 )
 
@@ -86,6 +87,10 @@ func GetLotteryOpenids(mode int) ([]string, error) {
 	resSlice, err := okSet.Inter(targetSet)
 	if err != nil {
 		return nil, err
+	}
+	for i := range resSlice {
+		j := rand.Intn(i + 1)
+		resSlice[i], resSlice[j] = resSlice[j], resSlice[i]
 	}
 	return resSlice, nil
 }

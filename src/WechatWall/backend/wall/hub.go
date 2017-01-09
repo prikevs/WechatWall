@@ -37,11 +37,93 @@ func newHub(wallmsgs <-chan libredis.Msg, bc chan bool) *Hub {
 }
 
 func (h *Hub) handleBroadcast() {
+	var msg libredis.Msg
+	if LoadReplay() {
+		//TODO
+		log.Info("in REPLAY mode, select message from ow set randomly")
+		msgid, err := owSet.RandMember()
+		if err != nil {
+			log.Error("FAILED to get rand member from OW SET!:", err)
+			return
+		}
+		if err := libredis.GetClassFromMap(msgid, &msg, owMap); err != nil {
+			log.Error("FAILED to get msg from WATING MSGS MAP!:", err)
+			return
+		}
+	} else {
+		empty := false
+		empty_reuse := false
+
+		select {
+		case msg = <-h.reuse:
+		default:
+			empty_reuse = true
+		}
+
+		if empty_reuse {
+			select {
+			case msg = <-h.wallmsgs:
+			default:
+				empty = true
+			}
+		}
+
+		// no message got, break
+		if empty {
+			return
+		}
+
+		if LoadReliableMsg() && len(h.clients) == 0 {
+			log.Info("there is no wall now, reuse message.")
+			select {
+			case h.reuse <- msg:
+			default:
+				log.Warning("reuse is full, not supposed to be here.")
+			}
+			return
+		}
+	}
+
+	log.Info("prepare to send msg", msg.MsgId, msg.Content, "to Wall")
+	wmsg := &WallMsg{
+		MsgId:      msg.MsgId,
+		Username:   msg.Username,
+		Openid:     msg.UserOpenid,
+		MsgType:    msg.MsgType,
+		CreateTime: msg.CreateTime,
+		Content:    msg.Content,
+		ImgUrl:     utils.BuildImagePath(msg.UserOpenid),
+	}
+
+	data, err := json.Marshal(wmsg)
+	if err != nil {
+		log.Warning("message from %s failed to encode to json",
+			msg.UserOpenid)
+		return
+	}
+	if !LoadReplay() {
+		log.Debug("in Non-Replay mode, save message to owSet and owMap")
+		if err := libredis.SetClassToMap(&msg, owMap); err != nil {
+			log.Warning("failed to add on wall message to on wall map")
+		}
+		if _, err := owSet.Add(msg.Key()); err != nil {
+			log.Warning("failed to add on wall message to on wall set")
+		}
+	}
+	// prepare to send message
+	for client := range h.clients {
+		select {
+		case client.send <- data:
+		default:
+			log.Warning("something happened when writing to wall", client, "make it offline")
+			close(client.send)
+			delete(h.clients, client)
+		}
+	}
 
 }
 
 func (h *Hub) run() {
-	reuse := make(chan libredis.Msg, 2)
 	for {
 		select {
 		case client := <-h.register:
@@ -54,89 +136,7 @@ func (h *Hub) run() {
 				close(client.send)
 			}
 		case <-h.broadcast:
-			var msg libredis.Msg
-			if LoadReplay() {
-				//TODO
-				log.Info("in REPLAY mode, select message from ow set randomly")
-				msgid, err := owSet.RandMember()
-				if err != nil {
-					log.Error("FAILED to get rand member from OW SET!:", err)
-					break
-				}
-				if err := libredis.GetClassFromMap(msgid, &msg, owMap); err != nil {
-					log.Error("FAILED to get msg from WATING MSGS MAP!:", err)
-					break
-				}
-			} else {
-				empty := false
-				empty_reuse := false
-
-				select {
-				case msg = <-reuse:
-				default:
-					empty_reuse = true
-				}
-
-				if empty_reuse {
-					select {
-					case msg = <-h.wallmsgs:
-					default:
-						empty = true
-					}
-				}
-
-				// no message got, break
-				if empty {
-					break
-				}
-
-				if LoadReliableMsg() && len(h.clients) == 0 {
-					log.Info("there is no wall now, reuse message.")
-					select {
-					case reuse <- msg:
-					default:
-						log.Warning("reuse is full, not supposed to be here.")
-					}
-					break
-				}
-			}
-
-			log.Info("prepare to send msg", msg.MsgId, msg.Content, "to Wall")
-			wmsg := &WallMsg{
-				MsgId:      msg.MsgId,
-				Username:   msg.Username,
-				Openid:     msg.UserOpenid,
-				MsgType:    msg.MsgType,
-				CreateTime: msg.CreateTime,
-				Content:    msg.Content,
-				ImgUrl:     utils.BuildImagePath(msg.UserOpenid),
-			}
-
-			data, err := json.Marshal(wmsg)
-			if err != nil {
-				log.Warning("message from %s failed to encode to json",
-					msg.UserOpenid)
-				break
-			}
-			if !LoadReplay() {
-				log.Debug("in Non-Replay mode, save message to owSet and owMap")
-				if err := libredis.SetClassToMap(&msg, owMap); err != nil {
-					log.Warning("failed to add on wall message to on wall map")
-				}
-				if _, err := owSet.Add(msg.Key()); err != nil {
-					log.Warning("failed to add on wall message to on wall set")
-				}
-			}
-			// prepare to send message
-			for client := range h.clients {
-				select {
-				case client.send <- data:
-				default:
-					log.Warning("something happened when writing to wall", client, "make it offline")
-					close(client.send)
-					delete(h.clients, client)
-				}
-			}
+			h.handleBroadcast()
 		}
 	}
 }
