@@ -14,7 +14,8 @@ const (
 )
 
 type CommonConfig struct {
-	ImageDir string `json:"image_dir"`
+	ImageDir    string `json:"image_dir"`
+	FrontendDir string `json:"frontend_dir"`
 }
 
 type WechatConfig struct {
