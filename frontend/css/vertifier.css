@@ -1,0 +1,101 @@
+body {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    /*background: url(../img/bg.jpg);*/
+    background-color: #ff8fe3;
+    background-repeat: no-repeat;
+    background-size: cover;
+    position: relative;
+    font-family: 'microsoft yahei', arial;
+}
+
+.layout-body {
+    position:absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: 0 1%;
+}
+
+.mess-list {
+    /*height: 100%;*/
+    position: absolute;
+    top: 0;
+    -webkit-transition: all .6s;
+    -moz-transition: all .6s;
+    -ms-transition: all .6s;
+    -o-transition: all .6s;
+    transition: all .6s;
+}
+
+.mess-list .mess-item {
+    display: flex;
+    height: 23vh;
+    background-color: rgba(220,220,220,0.5);
+    margin-top: 1.6vh;
+    align-items: center;
+    -webkit-transition: all .6s;
+    -moz-transition: all .6s;
+    -ms-transition: all .6s;
+    -o-transition: all .6s;
+    transition: all .6s;
+    position: relative;
+}
+
+.mess-item .icon {
+    display: block;
+    width: 36px;
+    height: 36px;
+    background-image: url('../img/close.png');
+    background-size:cover;
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    cursor: pointer;
+}
+
+.mess-item .item-avatar {
+    flex: 1;
+}
+
+.item-avatar .avatar{
+    width: 52%;
+    height: auto;
+    display: flex;
+    margin: 0 auto;
+}
+
+.mess-item .item-mess{
+    flex: 4;
+    height: 100%;
+}
+.item-mess .user-name {
+    font-size: 3rem;
+    line-height: 2;
+}
+.item-mess .mess-content{
+    font-size: 1.5rem;
+    line-height: 1.5;
+}
+
+.mess-item .item-btn {
+    flex: 1;
+}
+.item-btn .btn {
+    display: block;
+    width: 88px;
+    height: 24px;
+    line-height: 24px;
+    border-radius: 10px;
+    padding: 10px;
+    margin: 20px auto;
+    background: #38ff59;
+    text-align: center;
+    color: #000;
+}
+.item-btn .btn:hover{
+    background: #3aa102;
+    color: #ffffff;
+}
