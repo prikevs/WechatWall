@@ -22,6 +22,7 @@ type Set interface {
 	Add(...string) (int64, error)
 	Del(...string) (int64, error)
 	InterStore(Set, string) (Set, error)
+	Inter(...Set) ([]string, error)
 }
 
 type mSet struct {
@@ -71,6 +72,16 @@ func (this *mSet) Del(vs ...string) (result int64, err error) {
 	return
 }
 
+func (this *mSet) Inter(sets ...Set) ([]string, error) {
+	keys := make([]string, 0)
+	for _, s := range sets {
+		keys = append(keys, s.GetSetName())
+	}
+	keys = append(keys, this.GetSetName())
+	result, err := this.Client.SInter(keys...).Result()
+	return result, err
+}
+
 func (this *mSet) InterStore(set Set, target string) (Set, error) {
 	_, err := this.Client.SInterStore(target, set.GetSetName()).Result()
 	if err != nil {
@@ -112,4 +123,8 @@ func GetSentSet() (Set, error) {
 
 func GetOWSet() (Set, error) {
 	return GetSet(OWSETNAME)
+}
+
+func GetLTSet() (Set, error) {
+	return GetSet(LOTTERYSETNAME)
 }

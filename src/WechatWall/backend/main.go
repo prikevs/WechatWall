@@ -2,6 +2,7 @@ package main
 
 import (
 	"WechatWall/backend/config"
+	"WechatWall/backend/lottery"
 	"WechatWall/backend/verifier"
 	"WechatWall/backend/wall"
 	"WechatWall/backend/web"
@@ -50,6 +51,7 @@ func init() {
 	r.HandleFunc("/static/{type}/{name}", web.ServeStatic)
 	r.HandleFunc("/verifier", web.ServeVerifier)
 	r.HandleFunc("/wall", web.ServeWall)
+	r.HandleFunc("/lottery", lottery.ServeLottery)
 
 	http.Handle("/", r)
 }
@@ -63,6 +65,7 @@ func main() {
 	wall.Init(acfg)
 	wechat.Init(acfg)
 	web.Init(acfg)
+	lottery.Init(acfg)
 
 	log.Println(http.ListenAndServe("127.0.0.1:9999", nil))
 }

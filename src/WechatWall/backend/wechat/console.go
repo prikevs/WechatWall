@@ -115,120 +115,160 @@ func SetConfig(acfg *config.AtomicConfig, val interface{}, setter func(cfg *conf
 	return Success
 }
 
+func (this *AdminConsole) SetLMode(cmds []string) string {
+	if len(cmds) != 1 {
+		return ErrInvalidCmd
+	}
+	lmode, err := strconv.Atoi(cmds[0])
+	if lmode != 0 && lmode != 1 {
+		return ErrInvalidCmd
+	}
+	if err != nil {
+		return ErrInvalidCmd
+	}
+	return SetConfig(this.acfg, lmode,
+		func(cfg *config.Config, val interface{}) {
+			cfg.Lottery.Mode = val.(int)
+		})
+}
+
+func (this *AdminConsole) SetSendn(cmds []string) string {
+	if len(cmds) != 1 {
+		return ErrInvalidCmd
+	}
+	switch cmds[0] {
+	case "on":
+		log.Info("ADMIN set send notification on")
+		return SetConfig(this.acfg, true,
+			func(cfg *config.Config, val interface{}) {
+				cfg.Verifier.SendNotification = val.(bool)
+			})
+	case "off":
+		log.Info("ADMIN set send notification off")
+		return SetConfig(this.acfg, false,
+			func(cfg *config.Config, val interface{}) {
+				cfg.Verifier.SendNotification = val.(bool)
+			})
+	default:
+		return ErrInvalidCmd
+	}
+}
+
+func (this *AdminConsole) SetNeedv(cmds []string) string {
+	if len(cmds) != 1 {
+		return ErrInvalidCmd
+	}
+	switch cmds[0] {
+	case "on":
+		log.Info("ADMIN set need verification on")
+		return SetConfig(this.acfg, true,
+			func(cfg *config.Config, val interface{}) {
+				cfg.Verifier.NeedVerification = val.(bool)
+			})
+	case "off":
+		log.Info("ADMIN set send verification off")
+		return SetConfig(this.acfg, false,
+			func(cfg *config.Config, val interface{}) {
+				cfg.Verifier.NeedVerification = val.(bool)
+			})
+	default:
+		return ErrInvalidCmd
+	}
+}
+
+func (this *AdminConsole) SetTTL(cmds []string) string {
+	if len(cmds) != 1 {
+		return ErrInvalidCmd
+	}
+	ttl, err := strconv.Atoi(cmds[0])
+	if err != nil {
+		return ErrInvalidCmd
+	}
+	if ttl <= 0 {
+		return ErrInvalidCmd
+	}
+	return SetConfig(this.acfg, ttl,
+		func(cfg *config.Config, val interface{}) {
+			cfg.Verifier.MaxMsgWaitingTime = val.(int)
+		})
+}
+
+func (this *AdminConsole) SetReplay(cmds []string) string {
+	if len(cmds) != 1 {
+		return ErrInvalidCmd
+	}
+	switch cmds[0] {
+	case "on":
+		log.Info("ADMIN set need verification on")
+		return SetConfig(this.acfg, true,
+			func(cfg *config.Config, val interface{}) {
+				cfg.Wall.Replay = val.(bool)
+			})
+	case "off":
+		log.Info("ADMIN set send verification off")
+		return SetConfig(this.acfg, false,
+			func(cfg *config.Config, val interface{}) {
+				cfg.Wall.Replay = val.(bool)
+			})
+	default:
+		return ErrInvalidCmd
+	}
+}
+
+func (this *AdminConsole) SetSwd(cmds []string) string {
+	if len(cmds) != 1 {
+		return ErrInvalidCmd
+	}
+	swd, err := strconv.Atoi(cmds[0])
+	if swd <= 0 {
+		return ErrInvalidCmd
+	}
+	if err != nil {
+		return ErrInvalidCmd
+	}
+	return SetConfig(this.acfg, swd,
+		func(cfg *config.Config, val interface{}) {
+			cfg.Wall.SendToWallDuration = val.(int)
+		})
+}
+
+func (this *AdminConsole) SetSvd(cmds []string) string {
+	if len(cmds) != 1 {
+		return ErrInvalidCmd
+	}
+	svd, err := strconv.Atoi(cmds[0])
+	if svd <= 0 {
+		return ErrInvalidCmd
+	}
+	if err != nil {
+		return ErrInvalidCmd
+	}
+	return SetConfig(this.acfg, svd,
+		func(cfg *config.Config, val interface{}) {
+			cfg.Verifier.SendVerificationDuration = val.(int)
+		})
+}
+
 func (this *AdminConsole) CmdSet(cmds []string) string {
 	if len(cmds) == 0 {
 		return ErrInvalidCmd
 	}
 	switch cmds[0] {
+	case "lmode":
+		return this.SetLMode(cmds[1:])
 	case "sendn":
-		if len(cmds[1:]) != 1 {
-			return ErrInvalidCmd
-		}
-		switch cmds[1] {
-		case "on":
-			log.Info("ADMIN set send notification on")
-			return SetConfig(this.acfg, true,
-				func(cfg *config.Config, val interface{}) {
-					cfg.Verifier.SendNotification = val.(bool)
-				})
-		case "off":
-			log.Info("ADMIN set send notification off")
-			return SetConfig(this.acfg, false,
-				func(cfg *config.Config, val interface{}) {
-					cfg.Verifier.SendNotification = val.(bool)
-				})
-		default:
-			return ErrInvalidCmd
-		}
+		return this.SetSendn(cmds[1:])
 	case "needv":
-		if len(cmds[1:]) != 1 {
-			return ErrInvalidCmd
-		}
-		switch cmds[1] {
-		case "on":
-			log.Info("ADMIN set need verification on")
-			return SetConfig(this.acfg, true,
-				func(cfg *config.Config, val interface{}) {
-					cfg.Verifier.NeedVerification = val.(bool)
-				})
-		case "off":
-			log.Info("ADMIN set send verification off")
-			return SetConfig(this.acfg, false,
-				func(cfg *config.Config, val interface{}) {
-					cfg.Verifier.NeedVerification = val.(bool)
-				})
-		default:
-			return ErrInvalidCmd
-		}
+		return this.SetNeedv(cmds[1:])
 	case "ttl":
-		if len(cmds[1:]) != 1 {
-			return ErrInvalidCmd
-		}
-		ttl, err := strconv.Atoi(cmds[1])
-		if err != nil {
-			return ErrInvalidCmd
-		}
-		if ttl <= 0 {
-			return ErrInvalidCmd
-		}
-		return SetConfig(this.acfg, ttl,
-			func(cfg *config.Config, val interface{}) {
-				cfg.Verifier.MaxMsgWaitingTime = val.(int)
-			})
+		return this.SetTTL(cmds[1:])
 	case "replay":
-		if len(cmds[1:]) != 1 {
-			return ErrInvalidCmd
-		}
-		switch cmds[1] {
-		case "on":
-			log.Info("ADMIN set need verification on")
-			return SetConfig(this.acfg, true,
-				func(cfg *config.Config, val interface{}) {
-					cfg.Wall.Replay = val.(bool)
-				})
-		case "off":
-			log.Info("ADMIN set send verification off")
-			return SetConfig(this.acfg, false,
-				func(cfg *config.Config, val interface{}) {
-					cfg.Wall.Replay = val.(bool)
-				})
-		default:
-			return ErrInvalidCmd
-		}
-
+		return this.SetReplay(cmds[1:])
 	case "swd":
-		if len(cmds[1:]) != 1 {
-			return ErrInvalidCmd
-		}
-		swd, err := strconv.Atoi(cmds[1])
-		if swd <= 0 {
-			return ErrInvalidCmd
-		}
-		if err != nil {
-			return ErrInvalidCmd
-		}
-		return SetConfig(this.acfg, swd,
-			func(cfg *config.Config, val interface{}) {
-				cfg.Wall.SendToWallDuration = val.(int)
-			})
+		return this.SetSwd(cmds[1:])
 	case "svd":
-		if len(cmds[1:]) != 1 {
-			return ErrInvalidCmd
-		}
-		svd, err := strconv.Atoi(cmds[1])
-		if svd <= 0 {
-			return ErrInvalidCmd
-		}
-		if err != nil {
-			return ErrInvalidCmd
-		}
-		return SetConfig(this.acfg, svd,
-			func(cfg *config.Config, val interface{}) {
-				cfg.Verifier.SendVerificationDuration = val.(int)
-			})
-
+		return this.SetSvd(cmds[1:])
 	}
-
 	return ErrInvalidCmd
 }
 
@@ -239,6 +279,8 @@ func (this *UserConsole) CmdSet(cmds []string) string {
 func (this *AdminConsole) CmdHelp(cmds []string) string {
 	return this.UserConsole.CmdHelp(cmds) + `Admin Console Help:
 query/q/?
+lmode:
+   lottery mode, 1: all sent users, 2: passed users
 ttl:
     current ttl of unverified message
 svd:
@@ -251,6 +293,8 @@ needv:
     current status of if needing verification
 
 set/s
+lmode:
+   lottery mode, 1: all sent users, 2: passed users
 ttl <int>:
     set ttl of unverified message (in seconds)
 svd <int>:
@@ -296,6 +340,13 @@ func (this *AdminConsole) CmdQuery(cmds []string) string {
 	result := this.UserConsole.CmdQuery(cmds)
 	if result == ErrInvalidCmd {
 		switch cmds[0] {
+		case "lmode":
+			mode := GetConfig(this.acfg,
+				func(cfg *config.Config) interface{} {
+					return cfg.Lottery.Mode
+				}).(int)
+			result = fmt.Sprintf("lottery mode is: %d", mode)
+
 		case "ttl":
 			ttl := GetConfig(this.acfg,
 				func(cfg *config.Config) interface{} {

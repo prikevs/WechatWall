@@ -24,6 +24,8 @@ type Hub struct {
 
 	// ready messages
 	readymsgs <-chan libredis.Msg
+
+	reuse chan libredis.Msg
 }
 
 func newHub(msg <-chan libredis.Msg, bc <-chan bool) *Hub {
@@ -33,11 +35,84 @@ func newHub(msg <-chan libredis.Msg, bc <-chan bool) *Hub {
 		clients:    make(map[*Client]bool),
 		broadcast:  bc,
 		readymsgs:  msg,
+		reuse:      make(chan libredis.Msg, 2),
 	}
 }
 
+func (h *Hub) handleBroadcast() {
+	if !LoadNeedVerification() {
+		select {
+		case msg := <-h.readymsgs:
+			log.Info("you use non-verification mode, send message to vmq directly")
+			if err := libredis.PublishClassToMQ(&msg, vMQ); err != nil {
+				log.Error("failed to publish to the back of vmq:", err)
+			}
+		default:
+		}
+		return
+	}
+	for client := range h.clients {
+		var msg libredis.Msg
+		empty := false
+		empty_reuse := false
+		select {
+		case msg = <-h.reuse:
+		default:
+			empty_reuse = true
+		}
+
+		if empty_reuse {
+			select {
+			case msg = <-h.readymsgs:
+			default:
+				empty = true
+			}
+		}
+
+		// no message got, break
+		if empty {
+			break
+		}
+		// got message, add message to pending msgs map, set TTL
+		log.Info("prepare to send msg", msg.MsgId, "for verification")
+		vmsg := &VMsgSent{
+			Username:   msg.Username,
+			Openid:     msg.UserOpenid,
+			MsgId:      msg.Key(),
+			MsgType:    msg.MsgType,
+			CreateTime: msg.CreateTime,
+			Content:    msg.Content,
+			ImgUrl:     utils.BuildImagePath(msg.UserOpenid),
+			TTL:        int64(LoadMaxMsgWaitingTime().Seconds() * 1000),
+		}
+		data, err := json.Marshal(vmsg)
+		if err != nil {
+			log.Warningf("message from %s failed to encode to json",
+				msg.UserOpenid)
+			continue
+		}
+
+		// prepare to send message
+		select {
+		case client.send <- []byte(data):
+			log.Info("msg", msg.MsgId, "sent to verifier")
+			if err := libredis.SetClassToMapWithTTL(
+				&msg, pMsgsMap, LoadMaxMsgWaitingTime()); err != nil {
+				log.Error("failed to set message from %s to waiting map:", err)
+			}
+		default:
+			log.Warning("something happened when writing to verifier",
+				client, "make it offline")
+			close(client.send)
+			delete(h.clients, client)
+			// reuse the message next time
+			h.reuse <- msg
+		}
+	}
+
+}
+
 func (h *Hub) run() {
-	reuse := make(chan libredis.Msg, 2)
 	for {
 		select {
 		case client := <-h.register:
@@ -53,77 +128,7 @@ func (h *Hub) run() {
 		// case verified := <-h.verified:
 		// verified message, handle here
 		case <-h.broadcast:
-			if !LoadNeedVerification() {
-				select {
-				case msg := <-h.readymsgs:
-					log.Info("you use non-verification mode, send message to vmq directly")
-					if err := libredis.PublishClassToMQ(&msg, vMQ); err != nil {
-						log.Error("failed to publish to the back of vmq:", err)
-						break
-					}
-				default:
-				}
-				break
-			}
-			for client := range h.clients {
-				var msg libredis.Msg
-				empty := false
-				empty_reuse := false
-				select {
-				case msg = <-reuse:
-				default:
-					empty_reuse = true
-				}
-
-				if empty_reuse {
-					select {
-					case msg = <-h.readymsgs:
-					default:
-						empty = true
-					}
-				}
-
-				// no message got, break
-				if empty {
-					break
-				}
-				// got message, add message to pending msgs map, set TTL
-				log.Info("prepare to send msg", msg.MsgId, "for verification")
-				vmsg := &VMsgSent{
-					Username:   msg.Username,
-					Openid:     msg.UserOpenid,
-					MsgId:      msg.Key(),
-					MsgType:    msg.MsgType,
-					CreateTime: msg.CreateTime,
-					Content:    msg.Content,
-					ImgUrl:     utils.BuildImagePath(msg.UserOpenid),
-					TTL:        int64(LoadMaxMsgWaitingTime().Seconds() * 1000),
-				}
-				data, err := json.Marshal(vmsg)
-				if err != nil {
-					log.Warningf("message from %s failed to encode to json",
-						msg.UserOpenid)
-					continue
-				}
-
-				// prepare to send message
-				select {
-				case client.send <- []byte(data):
-					log.Info("msg", msg.MsgId, "sent to verifier")
-					if err := libredis.SetClassToMapWithTTL(
-						&msg, pMsgsMap, LoadMaxMsgWaitingTime()); err != nil {
-						log.Error("failed to set message from %s to waiting map:", err)
-					}
-				default:
-					log.Warning("something happened when writing to verifier",
-						client, "make it offline")
-					close(client.send)
-					delete(h.clients, client)
-					// reuse the message next time
-					reuse <- msg
-				}
-
-			}
+			h.handleBroadcast()
 		}
 	}
 }

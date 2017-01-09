@@ -19,6 +19,13 @@ type CommonConfig struct {
 	DebugF      bool
 }
 
+type LotteryConfig struct {
+	// mode:
+	// 0 all sent
+	// 1 passed verification
+	Mode int `json:"mode"`
+}
+
 type WechatConfig struct {
 	WXAppId            string   `json:"wx_app_id"`
 	WXAppSecret        string   `json:"wx_app_secret"`
@@ -51,6 +58,7 @@ type Config struct {
 	Wechat   WechatConfig
 	Verifier VerifierConfig
 	Wall     WallConfig
+	Lottery  LotteryConfig
 }
 
 type AtomicConfig struct {

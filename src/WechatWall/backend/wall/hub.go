@@ -21,6 +21,8 @@ type Hub struct {
 	unregister chan *Client
 
 	wallmsgs <-chan libredis.Msg
+
+	reuse chan libredis.Msg
 }
 
 func newHub(wallmsgs <-chan libredis.Msg, bc chan bool) *Hub {
@@ -30,7 +32,12 @@ func newHub(wallmsgs <-chan libredis.Msg, bc chan bool) *Hub {
 		unregister: make(chan *Client),
 		clients:    make(map[*Client]bool),
 		wallmsgs:   wallmsgs,
+		reuse:      make(chan libredis.Msg, 2),
 	}
+}
+
+func (h *Hub) handleBroadcast() {
+
 }
 
 func (h *Hub) run() {
@@ -53,11 +60,11 @@ func (h *Hub) run() {
 				log.Info("in REPLAY mode, select message from ow set randomly")
 				msgid, err := owSet.RandMember()
 				if err != nil {
-					log.Error("FAILED to get rand member from OW SET!")
+					log.Error("FAILED to get rand member from OW SET!:", err)
 					break
 				}
 				if err := libredis.GetClassFromMap(msgid, &msg, owMap); err != nil {
-					log.Error("FAILED to get rand member from OW MAP!")
+					log.Error("FAILED to get msg from WATING MSGS MAP!:", err)
 					break
 				}
 			} else {
