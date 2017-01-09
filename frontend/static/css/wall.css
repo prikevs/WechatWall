@@ -23,6 +23,7 @@ body {
 	/*height: 100%;*/
 	position: absolute;
 	top:0;
+	width: 100%;
 	/*-webkit-transition: all .6s;*/
 	/*-moz-transition: all .6s;*/
 	/*-ms-transition: all .6s;*/

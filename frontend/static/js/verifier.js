@@ -11,24 +11,36 @@ $(function(){
 
     var i = 1;
     socket.onmessage = function(event) {
-        var data = JSON.parse(event.data);
-        console.log(data);
-        if(data['ret_code']) {
-            switch(data['ret_code']){
+        // console.log(event.data);
+        // var data = JSON.parse(event.data);
+        // console.log(data);
+
+        var tdata = event.data;
+        var data_arr = tdata.split('\n');
+        // console.log(data_arr);
+        var msg = JSON.parse(data_arr[0]);
+        console.log(msg);
+        if(msg['ret_code']) {
+            switch(msg['ret_code']){
                 case 200:
                     alert('success');
                     break;
                 case 500:
                     alert('fail');
-                    console.log(data['err_msg']);
+                    console.log(msg['err_msg']);
                     break;
                 default:
                     alert('other');
                     break;
             }
-            $('#' + data['msg_id']).remove();
+            $('#' + msg['msg_id']).remove();
         }else {
-            addmessage(data);
+            var len = data_arr.length;
+            for(var i = 0; i < len; i++) {
+                var data = JSON.parse(data_arr[i]);
+                addmessage(data);
+            }
+            // addmessage(data);
         }
     }
 
