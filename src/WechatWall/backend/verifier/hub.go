@@ -43,6 +43,7 @@ func (h *Hub) run() {
 		case client := <-h.register:
 			log.Info("another verifier comes online,", client)
 			h.clients[client] = true
+			// TODO: send all pending messages
 		case client := <-h.unregister:
 			if _, ok := h.clients[client]; ok {
 				log.Info("verifier,", client, "goes offline")
