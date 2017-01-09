@@ -1,4 +1,4 @@
 {
     "image_dir": "/Users/kevince/Documents/others/gocrawler/src/WechatWall/crawler/data/images",
-    "front_end": "/Users/kevince/Documents/others/gocrawler/frontend"
+    "frontend_dir": "/Users/kevince/Documents/others/gocrawler/frontend"
 }
