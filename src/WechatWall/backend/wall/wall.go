@@ -107,12 +107,12 @@ func prepareWallMsgs(wallmsgs chan<- libredis.Msg) {
 }
 
 type WallMsg struct {
-	MsgId      int64 `json:"msg_id"`
-	Username   string
-	Openid     string
+	MsgId      int64  `json:"msg_id"`
+	Username   string `json:"username"`
+	Openid     string `json:"openid"`
 	MsgType    string `json:"msg_type"`
 	CreateTime int64  `json:"create_time"`
-	Content    string
+	Content    string `json:"content"`
 	ImgUrl     string `json:"img_url"`
 }
 

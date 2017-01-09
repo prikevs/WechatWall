@@ -98,7 +98,7 @@ var (
 
 // verification message to send
 type VMsgSent struct {
-	Username   string `json:username`
+	Username   string `json:"username"`
 	Openid     string `json:"openid"`
 	MsgId      string `json:"msg_id"`
 	MsgType    string `json:"msg_type"`
