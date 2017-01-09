@@ -113,6 +113,7 @@ type VMsgRecvd struct {
 	MsgId        string `json:"msg_id"`
 	VerifiedTime int64  `json:"verified_time"`
 	ShowNow      bool   `json:"show_now"`
+	Verified     bool   `json:"verified"`
 }
 
 type VMsgResp struct {

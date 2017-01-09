@@ -79,6 +79,7 @@ func handleVMsg(recvm *VMsgRecvd) error {
 		return errors.New("invalid parameter msgid")
 	}
 
+	// TODO:Add support to delete message
 	msg := &libredis.Msg{}
 	if err := libredis.GetClassFromMap(
 		recvm.MsgId, msg, pMsgsMap); err != nil {
