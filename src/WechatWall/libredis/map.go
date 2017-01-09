@@ -17,6 +17,7 @@ type Map interface {
 	Set(string, string) error
 	SetTimeout(string, time.Duration) (bool, error)
 	Get(string) (string, error)
+	Size() (int64, error)
 	Exists(string) (bool, error)
 	Del(string) (int64, error)
 }
@@ -24,6 +25,25 @@ type Map interface {
 type mMap struct {
 	Prefix string
 	Client *redis.Client
+}
+
+func (this *mMap) Size() (int64, error) {
+	var cursor uint64
+	var n int64
+	for {
+		var keys []string
+		var err error
+		keys, cursor, err = this.Client.Scan(cursor, this.Prefix+"*", 10).Result()
+		if err != nil {
+			return 0, err
+		}
+		n += int64(len(keys))
+		if cursor == 0 {
+			break
+		}
+	}
+
+	return n, nil
 }
 
 func (this *mMap) Key(k string) string {

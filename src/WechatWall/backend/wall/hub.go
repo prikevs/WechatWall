@@ -48,36 +48,50 @@ func (h *Hub) run() {
 			}
 		case <-h.broadcast:
 			var msg libredis.Msg
-			empty := false
-			empty_reuse := false
-
-			select {
-			case msg = <-reuse:
-			default:
-				empty_reuse = true
-			}
-
-			if empty_reuse {
-				select {
-				case msg = <-h.wallmsgs:
-				default:
-					empty = true
+			if LoadReplay() {
+				//TODO
+				log.Info("in REPLAY mode, select message from ow set randomly")
+				msgid, err := owSet.RandMember()
+				if err != nil {
+					log.Error("FAILED to get rand member from OW SET!")
+					break
 				}
-			}
-
-			// no message got, break
-			if empty {
-				break
-			}
-
-			if LoadReliableMsg() && len(h.clients) == 0 {
-				log.Info("there is no wall now, reuse message.")
-				select {
-				case reuse <- msg:
-				default:
-					log.Warning("reuse is full, not supposed to be here.")
+				if err := libredis.GetClassFromMap(msgid, &msg, owMap); err != nil {
+					log.Error("FAILED to get rand member from OW MAP!")
+					break
 				}
-				break
+			} else {
+				empty := false
+				empty_reuse := false
+
+				select {
+				case msg = <-reuse:
+				default:
+					empty_reuse = true
+				}
+
+				if empty_reuse {
+					select {
+					case msg = <-h.wallmsgs:
+					default:
+						empty = true
+					}
+				}
+
+				// no message got, break
+				if empty {
+					break
+				}
+
+				if LoadReliableMsg() && len(h.clients) == 0 {
+					log.Info("there is no wall now, reuse message.")
+					select {
+					case reuse <- msg:
+					default:
+						log.Warning("reuse is full, not supposed to be here.")
+					}
+					break
+				}
 			}
 
 			log.Info("prepare to send msg", msg.MsgId, msg.Content, "to Wall")
@@ -97,11 +111,14 @@ func (h *Hub) run() {
 					msg.UserOpenid)
 				break
 			}
-			if err := libredis.SetClassToMap(&msg, owMap); err != nil {
-				log.Warning("failed to add on wall message to on wall map")
-			}
-			if _, err := owSet.Add(msg.Key()); err != nil {
-				log.Warning("failed to add on wall message to on wall set")
+			if !LoadReplay() {
+				log.Debug("in Non-Replay mode, save message to owSet and owMap")
+				if err := libredis.SetClassToMap(&msg, owMap); err != nil {
+					log.Warning("failed to add on wall message to on wall map")
+				}
+				if _, err := owSet.Add(msg.Key()); err != nil {
+					log.Warning("failed to add on wall message to on wall set")
+				}
 			}
 			// prepare to send message
 			for client := range h.clients {

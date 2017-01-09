@@ -43,6 +43,7 @@ type VerifierConfig struct {
 type WallConfig struct {
 	SendToWallDuration int  `json:"send_to_wall_duration"`
 	ReliableMsg        bool `json:"reliable_msg"`
+	Replay             bool `json:"replay"`
 }
 
 type Config struct {
@@ -114,4 +115,14 @@ func New(dir string) *Config {
 	}
 	c.Common = *com
 	return c
+}
+
+func GetConfig(acfg *AtomicConfig, dft interface{},
+	getter func(cfg *Config) interface{}) interface{} {
+
+	cfg := LoadCfgFromACfg(acfg)
+	if cfg == nil {
+		return dft
+	}
+	return getter(cfg)
 }

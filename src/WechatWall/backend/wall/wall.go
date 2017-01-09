@@ -31,32 +31,32 @@ const (
 var (
 	dSendToWallDuration = 2 * time.Second
 	dReliableMsg        = true
+	dReplay             = false
 	ACfg                *config.AtomicConfig
 )
 
 func LoadReliableMsg() bool {
-	if ACfg == nil {
-		return dReliableMsg
-	}
-	cfg := ACfg.LoadConfig()
-	if cfg == nil {
-		return dReliableMsg
-	}
-	return cfg.Wall.ReliableMsg
+	return config.GetConfig(ACfg, dReliableMsg,
+		func(cfg *config.Config) interface{} {
+			return cfg.Wall.ReliableMsg
+		}).(bool)
 }
 
 func LoadSendToWallDuration() time.Duration {
-	if ACfg == nil {
-		return dSendToWallDuration
-	}
-	cfg := ACfg.LoadConfig()
-	if cfg == nil {
-		return dSendToWallDuration
-	}
-	if cfg.Wall.SendToWallDuration == 0 {
-		return dSendToWallDuration
-	}
-	return time.Duration(cfg.Wall.SendToWallDuration) * time.Second
+	return config.GetConfig(ACfg, dSendToWallDuration,
+		func(cfg *config.Config) interface{} {
+			if cfg.Wall.SendToWallDuration <= 0 {
+				return dSendToWallDuration
+			}
+			return time.Duration(cfg.Wall.SendToWallDuration) * time.Second
+		}).(time.Duration)
+}
+
+func LoadReplay() bool {
+	return config.GetConfig(ACfg, dReplay,
+		func(cfg *config.Config) interface{} {
+			return cfg.Wall.Replay
+		}).(bool)
 }
 
 var (
@@ -91,7 +91,7 @@ func Init(acfg *config.AtomicConfig) {
 	wallmsgs := make(chan libredis.Msg)
 	hub = newHub(wallmsgs, bc)
 	go hub.run()
-	go tickWallBroadcastSignal(bc, LoadSendToWallDuration())
+	go tickWallBroadcastSignal(bc)
 	go prepareWallMsgs(wallmsgs)
 }
 
@@ -116,19 +116,25 @@ type WallMsg struct {
 	ImgUrl     string `json:"img_url"`
 }
 
-func tickWallBroadcastSignal(bc chan bool, d time.Duration) {
+func tickWallBroadcastSignal(bc chan bool) {
 	round := 0
-	for range time.Tick(d) {
-		select {
-		case bc <- true:
-			round = 0
-		default:
-			round++
-			if round >= TickWarnRound {
-				log.Warning("wall tick block",
-					round,
-					"round(s), maybe hub is doing some heavy work, reset tick")
+	for {
+		nowDuration := LoadSendToWallDuration()
+		for range time.Tick(nowDuration) {
+			select {
+			case bc <- true:
 				round = 0
+			default:
+				round++
+				if round >= TickWarnRound {
+					log.Warning("wall tick block",
+						round,
+						"round(s), maybe hub is doing some heavy work, reset tick")
+					round = 0
+				}
+			}
+			if nowDuration != LoadSendToWallDuration() {
+				break
 			}
 		}
 	}

@@ -66,7 +66,7 @@ func LoadSendVerificationDuration() time.Duration {
 	if cfg == nil {
 		return dSendVerificationDuration
 	}
-	if cfg.Verifier.SendVerificationDuration == 0 {
+	if cfg.Verifier.SendVerificationDuration <= 0 {
 		return dSendVerificationDuration
 	}
 	return time.Duration(cfg.Verifier.SendVerificationDuration) * time.Second
@@ -77,7 +77,7 @@ func LoadMaxMsgWaitingTime() time.Duration {
 	if cfg == nil {
 		return dMaxMsgWaitingTime
 	}
-	if cfg.Verifier.MaxMsgWaitingTime == 0 {
+	if cfg.Verifier.MaxMsgWaitingTime <= 0 {
 		return dMaxMsgWaitingTime
 	}
 	return time.Duration(cfg.Verifier.MaxMsgWaitingTime) * time.Second
@@ -130,17 +130,23 @@ func FailOnError(err error) {
 
 func tickBroadcastSignal(bc chan bool, d time.Duration) {
 	round := 0
-	for range time.Tick(d) {
-		select {
-		case bc <- true:
-			round = 0
-		default:
-			round++
-			if round >= TickWarnRound {
-				log.Warning("wall tick not working for",
-					round,
-					"round(s), maybe hub is doing some heavy work, reset tick")
+	for {
+		nowDuration := LoadSendVerificationDuration()
+		for range time.Tick(d) {
+			select {
+			case bc <- true:
 				round = 0
+			default:
+				round++
+				if round >= TickWarnRound {
+					log.Warning("wall tick not working for",
+						round,
+						"round(s), maybe hub is doing some heavy work, reset tick")
+					round = 0
+				}
+			}
+			if nowDuration != LoadSendVerificationDuration() {
+				break
 			}
 		}
 	}

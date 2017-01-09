@@ -14,10 +14,11 @@ const (
 )
 
 type Set interface {
-	Total() (int64, error)
+	Size() (int64, error)
 	GetSetName() string
 	Members() ([]string, error)
 	IsMember(string) (bool, error)
+	RandMember() (string, error)
 	Add(...string) (int64, error)
 	Del(...string) (int64, error)
 	InterStore(Set, string) (Set, error)
@@ -28,7 +29,7 @@ type mSet struct {
 	Client *redis.Client
 }
 
-func (this *mSet) Total() (int64, error) {
+func (this *mSet) Size() (int64, error) {
 	return this.Client.SCard(this.Name).Result()
 }
 
@@ -39,6 +40,11 @@ func (this *mSet) GetSetName() string {
 func (this *mSet) IsMember(v string) (result bool, err error) {
 	result = false
 	result, err = this.Client.SIsMember(this.Name, v).Result()
+	return
+}
+
+func (this *mSet) RandMember() (result string, err error) {
+	result, err = this.Client.SRandMember(this.Name).Result()
 	return
 }
 
