@@ -240,6 +240,12 @@ func (this *AdminConsole) CmdQuery(cmds []string) string {
 		case "svd":
 		case "sendn":
 		case "needv":
+		case "df":
+			df := GetConfig(this.acfg,
+				func(cfg *config.Config) interface{} {
+					return cfg.Common.DebugF
+				}).(bool)
+			result = fmt.Sprintf("debug mode %v", df)
 		}
 	}
 	return result

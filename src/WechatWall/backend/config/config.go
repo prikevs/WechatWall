@@ -16,6 +16,7 @@ const (
 type CommonConfig struct {
 	ImageDir    string `json:"image_dir"`
 	FrontendDir string `json:"frontend_dir"`
+	DebugF      bool
 }
 
 type WechatConfig struct {
