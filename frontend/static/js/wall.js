@@ -1,9 +1,9 @@
 $(function(){
-	var MARGIN = 24.6;
+	var MARGIN = 19.75;
 
-	var socket = new WebSocket("ws://wechat.hk2.prikevs.com/ws/wall");
+	var socket = new WebSocket("wss://hk2.prikevs.com/ws/wall");
 	socket.onopen = function(event) {
-		alert('success');
+		// alert('success');
 	}
 
     var i = 1;
@@ -19,7 +19,7 @@ $(function(){
         $('.mess-list').append(
             '<li class="mess-item">' +
             '<div class="item-avatar">' +
-            '<img src="http://wechat.hk2.prikevs.com' + data.img_url + '" alt="头像" class="avatar">' +
+            '<img src="https://hk2.prikevs.com' + data.img_url + '" alt="头像" class="avatar">' +
             '</div>' +
             '<div class="item-mess">' +
             '<h2 class="user-name">' + data.username + '</h2>' +
