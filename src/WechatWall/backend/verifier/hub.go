@@ -4,6 +4,8 @@ import (
 	"WechatWall/backend/utils"
 	"WechatWall/libredis"
 
+	"github.com/bradfitz/slice"
+
 	"encoding/json"
 )
 
@@ -144,6 +146,10 @@ func (h *Hub) handleRegister(client *Client) {
 		}
 		vmsgs = append(vmsgs, vmsg)
 	}
+	slice.Sort(vmsgs[:], func(i, j int) bool {
+		return vmsgs[i].TTL < vmsgs[j].TTL
+	})
+
 	for _, vmsg := range vmsgs {
 		data, err := json.Marshal(vmsg)
 		if err != nil {

@@ -118,8 +118,8 @@ func textMsgHandler(ctx *core.Context) {
 
 	// TODO: Add suitable response
 	resp := response.NewText(msg.FromUserName, msg.ToUserName, msg.CreateTime, MessageOnReceived)
-	//ctx.RawResponse(resp) // 明文回复
-	ctx.AESResponse(resp, 0, "", nil) // aes密文回复
+	ctx.RawResponse(resp) // 明文回复
+	//ctx.AESResponse(resp, 0, "", nil) // aes密文回复
 }
 
 func defaultMsgHandler(ctx *core.Context) {
@@ -153,5 +153,6 @@ func defaultEventHandler(ctx *core.Context) {
 }
 
 func CallbackHandler(w http.ResponseWriter, r *http.Request) {
+	// log.Debug(*r)
 	msgServer.ServeHTTP(w, r, nil)
 }

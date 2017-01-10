@@ -7,19 +7,23 @@ import (
 	"WechatWall/backend/wall"
 	"WechatWall/backend/web"
 	"WechatWall/backend/wechat"
+	"WechatWall/logger"
 
+	"github.com/goji/httpauth"
 	"github.com/gorilla/mux"
 
 	"flag"
-	"log"
 	"net/http"
 	"os"
 	"path"
 	"path/filepath"
 )
 
+var log = logger.GetLogger("backend")
+
 type Options struct {
 	CfgDir string
+	TLS    bool
 }
 
 func getCurrentDir() string {
@@ -35,16 +39,20 @@ func MustParseArgs() *Options {
 		"c",
 		path.Join(getCurrentDir(), "etc"),
 		"directory of config files, like ./etc")
+	tls := flag.Bool(
+		"t",
+		false,
+		"if use tls")
 	flag.Parse()
 	opts := &Options{
 		CfgDir: *cfgdir,
+		TLS:    *tls,
 	}
 	return opts
 }
 
 func init() {
 	r := mux.NewRouter()
-	r.HandleFunc("/wx_callback", wechat.CallbackHandler)
 	r.HandleFunc("/ws/verifier", verifier.ServeVerifierWS)
 	r.HandleFunc("/ws/wall", wall.ServeWallWS)
 	r.HandleFunc("/img/{image}", web.ServeImage)
@@ -53,7 +61,9 @@ func init() {
 	r.HandleFunc("/wall", web.ServeWall)
 	r.HandleFunc("/lottery", lottery.ServeLottery)
 
-	http.Handle("/", r)
+	http.HandleFunc("/wx_callback", wechat.CallbackHandler)
+	http.Handle("/", httpauth.SimpleBasicAuth("kevince", "123456")(r))
+	// http.Handle("/", r)
 }
 
 func main() {
@@ -67,5 +77,11 @@ func main() {
 	web.Init(acfg)
 	lottery.Init(acfg)
 
-	log.Println(http.ListenAndServe("127.0.0.1:9999", nil))
+	if opts.TLS {
+		crtPath := path.Join(opts.CfgDir, "server.crt")
+		keyPath := path.Join(opts.CfgDir, "private.key")
+		log.Info(http.ListenAndServeTLS("127.0.0.1:9999", crtPath, keyPath, nil))
+	} else {
+		log.Info(http.ListenAndServe("127.0.0.1:9999", nil))
+	}
 }

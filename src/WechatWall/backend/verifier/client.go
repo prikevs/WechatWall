@@ -87,33 +87,40 @@ func handleVMsg(recvm *VMsgRecvd) error {
 	}
 
 	// pass set
-	if _, err := passSet.Add(msg.UserOpenid); err != nil {
-		log.Warning("failed to add user to passSet")
-	}
-
-	// update last verified msg
-	updateLastVerifiedMsg(msg)
-
-	msg.VerifiedTime = recvm.VerifiedTime
-	// publish to wechat wall (vMQ)
-	if recvm.ShowNow == true {
-		if err := libredis.PublishRClassToMQ(msg, vMQ); err != nil {
-			return errors.New("failed to publish to the front of vmq: " + err.Error())
+	if recvm.Del {
+		log.Info("delete message from pending messages map")
+		if err := libredis.DelClassFromMap(msg, pMsgsMap); err != nil {
+			log.Warning("failed to delete message from pending messages map, just ignore.")
 		}
 	} else {
-		if err := libredis.PublishClassToMQ(msg, vMQ); err != nil {
-			return errors.New("failed to publish to the back of vmq: " + err.Error())
+		if _, err := passSet.Add(msg.UserOpenid); err != nil {
+			log.Warning("failed to add user to passSet")
 		}
-	}
-	log.Info("Added message from user", msg.Username, "openid:", msg.UserOpenid, "to VMQ")
 
-	if LoadSendNotification() {
-		// send message to smq, notify user that msg sent
-		go sendNotification(*msg)
-	}
-	// delete message from pMsgsMap
-	if err := libredis.DelClassFromMap(msg, pMsgsMap); err != nil {
-		log.Warning("failed to delete msg from pending msgs map, we can wait for TTL")
+		// update last verified msg
+		updateLastVerifiedMsg(msg)
+
+		msg.VerifiedTime = recvm.VerifiedTime
+		// publish to wechat wall (vMQ)
+		if recvm.ShowNow == true {
+			if err := libredis.PublishRClassToMQ(msg, vMQ); err != nil {
+				return errors.New("failed to publish to the front of vmq: " + err.Error())
+			}
+		} else {
+			if err := libredis.PublishClassToMQ(msg, vMQ); err != nil {
+				return errors.New("failed to publish to the back of vmq: " + err.Error())
+			}
+		}
+		log.Info("Added message from user", msg.Username, "openid:", msg.UserOpenid, "to VMQ")
+
+		if LoadSendNotification() {
+			// send message to smq, notify user that msg sent
+			go sendNotification(*msg)
+		}
+		// delete message from pMsgsMap
+		if err := libredis.DelClassFromMap(msg, pMsgsMap); err != nil {
+			log.Warning("failed to delete msg from pending msgs map, we can wait for TTL")
+		}
 	}
 	return nil
 }
