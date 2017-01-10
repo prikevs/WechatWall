@@ -7,7 +7,7 @@ body {
 	background-repeat: no-repeat;
 	background-size: cover;
 	position: relative;
-	font-family: 'microsoft yahei', arial; 
+	font-family: 'microsoft yahei',Calibri, arial;
 }
 
 .layout-body {
@@ -33,9 +33,9 @@ body {
 
 .mess-list .mess-item {
 	display: flex;
-	height: 23vh;
+	height: 18.5vh;
 	background-color: rgba(220,220,220,0.5);
-	margin-top: 1.6vh;
+	margin-top: 1.25vh;
 	align-items: center;
 	-webkit-transition: all .6s;
 	-moz-transition: all .6s;
@@ -49,7 +49,7 @@ body {
 }
 
 .item-avatar .avatar{
-	width: 52%;
+	width: 10rem;
 	height: auto;
 	display: flex;
 	margin: 0 auto;
@@ -58,12 +58,66 @@ body {
 .mess-item .item-mess{
 	flex: 4;
 	height: 100%;
+	padding-right: 5%;
 }
 .item-mess .user-name {
-	font-size: 3rem;
-	line-height: 2;
+	font-size: 2.4rem;
+	line-height: 1.5;
 }
 .item-mess .mess-content{
 	font-size: 1.5rem;
 	line-height: 1.5;
+	display: -webkit-box;
+	-webkit-line-clamp: 3;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+/* media query */
+@media screen and (max-width: 1200px) {
+	.mess-item .item-avatar {
+		flex: 1.5;
+	}
+}
+
+@media screen and (max-width: 900px) {
+	html {
+		font-size: 14px;
+	}
+	.item-mess .user-name {
+		font-size: 2.1rem;
+		margin-top: 1rem;
+	}
+}
+
+@media screen and (max-width: 700px) {
+	html {
+		font-size: 12px;
+	}
+	.item-mess .user-name {
+		font-size: 2.1rem;
+		margin-top: 1rem;
+	}
+	.item-mess .mess-content {
+		-webkit-line-clamp: 4;
+	}
+}
+
+@media screen and (max-width: 550px) {
+	html {
+		font-size: 12px;
+	}
+	.mess-item .item-avatar {
+		flex: 1.6;
+	}
+	.item-mess .user-name {
+		font-size: 2.1rem;
+		margin-top: 1rem;
+	}
+	.item-mess .mess-content {
+		-webkit-line-clamp: 4;
+	}
+	.mess-item .item-mess {
+		padding-right: 0;
+	}
 }
