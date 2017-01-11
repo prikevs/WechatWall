@@ -127,7 +127,12 @@ body {
     font-size: 1.2rem;
     line-height:60px;
     text-align: center;
-    transform: translateY(-100%);
+    transform: translateY(0);
+    -webkit-transition: all .6s;
+    -moz-transition: all .6s;
+    -ms-transition: all .6s;
+    -o-transition: all .6s;
+    transition: all .6s;
 }
 .tips-bar .tips {
     width: 100%;

@@ -12,6 +12,7 @@ $(function(){
     var socket = new WebSocket("wss://hk2.prikevs.com/ws/verifier");
     socket.onopen = function(event) {
         // alert('success');
+        tips.css('transform', 'translateY(-100%)');
         tips_loading.css('transform', 'translateY(-100%)');
     }
 
@@ -34,7 +35,9 @@ $(function(){
                     //     clearTimeout(tips_time_keeper);
                     // }
                     tips_success.css('transform', 'translateY(0)');
+                    tips.css('transform', 'translateY(0)');
                     tips_time_keeper = setTimeout(function(){
+                        tips.css('transform', 'translateY(-100%)');
                         tips_success.css('transform', 'translateY(-100%)');
                     }, 1000);
                     break;
@@ -45,7 +48,9 @@ $(function(){
                     //     clearTimeout(tips_time_keeper);
                     // }
                     tips_fail.css('transform', 'translateY(0)');
+                    tips.css('transform', 'translateY(0)');
                     tips_time_keeper = setTimeout(function(){
+                        tips.css('transform', 'translateY(-100%)');
                         tips_fail.css('transform', 'translateY(-100%)');
                     }, 1000);
                     break;
