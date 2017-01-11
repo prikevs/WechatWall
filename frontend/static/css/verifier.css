@@ -127,6 +127,7 @@ body {
     font-size: 1.2rem;
     line-height:60px;
     text-align: center;
+    transform: translateY(-100%);
 }
 .tips-bar .tips {
     width: 100%;
@@ -151,4 +152,53 @@ body {
     background: #d9edf7;
     color: #31708f;
     transform: translateY(0);
+}
+
+/* media query */
+@media screen and (max-width: 1200px) {
+    .mess-item .item-avatar {
+        flex: 1.5;
+    }
+}
+
+@media screen and (max-width: 900px) {
+    html {
+        font-size: 14px;
+    }
+    .item-mess .user-name {
+        font-size: 2.1rem;
+        margin-top: 1rem;
+    }
+}
+
+@media screen and (max-width: 700px) {
+    html {
+        font-size: 12px;
+    }
+    .item-mess .user-name {
+        font-size: 2.1rem;
+        margin-top: 1rem;
+    }
+    .item-mess .mess-content {
+        -webkit-line-clamp: 4;
+    }
+}
+
+@media screen and (max-width: 550px) {
+    html {
+        font-size: 12px;
+    }
+    .mess-item .item-avatar {
+        flex: 1.6;
+    }
+    .item-mess .user-name {
+        font-size: 2.1rem;
+        margin-top: 1rem;
+    }
+    .item-mess .mess-content {
+        -webkit-line-clamp: 4;
+    }
+    .mess-item .item-mess {
+        padding-right: 0;
+    }
 }
