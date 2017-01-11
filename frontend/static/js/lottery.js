@@ -101,10 +101,11 @@ $(function() {
                     $('.stop').click(function(){
                         isBegin = false;
                         clearTimeout(immer);
-                        if(has_bd) {
+                        if(has_bd && bd_num != undefined) {
                             $('.avatar').attr('src',avatar[bd_num].src);
                             $(".prizer").text(people[bd_num].username);
                             chosed.push(bd_num);
+                            bd_num = undefined;
                         }else {
                             chosed.push(num);
                         }
