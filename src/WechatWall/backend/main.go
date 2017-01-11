@@ -54,7 +54,6 @@ func MustParseArgs() *Options {
 func init() {
 	r := mux.NewRouter()
 	r.HandleFunc("/ws/verifier", verifier.ServeVerifierWS)
-	r.HandleFunc("/ws/wall", wall.ServeWallWS)
 	r.HandleFunc("/img/{image}", web.ServeImage)
 	r.HandleFunc("/static/{type}/{name}", web.ServeStatic)
 	r.HandleFunc("/verifier", web.ServeVerifier)
@@ -62,6 +61,7 @@ func init() {
 	r.HandleFunc("/lottery", lottery.ServeLottery)
 
 	http.HandleFunc("/wx_callback", wechat.CallbackHandler)
+	http.HandleFunc("/ws/wall", wall.ServeWallWS)
 	http.Handle("/", httpauth.SimpleBasicAuth("kevince", "123456")(r))
 	// http.Handle("/", r)
 }

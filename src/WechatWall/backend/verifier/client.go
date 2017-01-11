@@ -162,7 +162,7 @@ func (c *Client) readPump() {
 			RetCode: 200,
 		}
 		if err := handleVMsg(recvm); err != nil {
-			log.Error("cannot handle message:", err)
+			log.Error("cannot handle message", recvm.MsgId, ":", err)
 			respm.RetCode = 500
 			respm.ErrMsg = err.Error()
 		}
