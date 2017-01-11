@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>抽奖</title>
+    <link rel="stylesheet" href="static/css/reset.css">
+    <style>
+        body {
+            width: 100%;
+            background: url(static/img/draw-bg.jpg) top center;
+            background-size: cover;
+            background-repeat:no-repeat;
+        }
+        .draw-panel {
+            text-align: center;
+            padding-top: 5%;
+        }
+        .draw {
+            display: inline-block;
+            width: 270px;
+            height: 370px;
+            padding-top: 102px;
+            margin: 0 auto;
+        }
+        .draw .draw-avatar {
+            height: 270px;
+            background-color: rgba(247,247,247,1);
+            border: 10px solid rgba(247,247,247,1);
+        }
+        .draw-avatar img{
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        .draw-prizer {
+            width: 270px;
+            height: 80px;
+            line-height: 80px;
+            color: #000;
+            font-size: 24px;
+            background: rgba(247,247,247,1);
+        }
+        .btn-list {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .btn-list a {
+            display: inline-block;
+            margin-right: 20px;
+            margin-left: 20px;
+            width: 72px;
+            height: 72px;
+            line-height: 72px;
+            cursor: pointer;
+            background-color: #9eea6a;
+            border-radius: 100%;
+            font-size: 20px;
+            color: #000;
+        }
+        .btn-list a:hover{
+            background-color: #8aee45;
+        }
+    </style>
+</head>
+<body>
+    <div class="layout-body">
+        <div class="draw-panel">
+            <div class="draw">
+                <div class="draw-avatar">
+                    <img class="avatar" src="static/img/2.jpg" alt="用户头像">
+                </div>
+                <div class="draw-prizer">
+                    <h2 class="prizer">阿黄</h2>
+                </div>
+            </div>
+            <div class="btn-list">
+                <a href="javascript:;" class="start">开始</a>
+                <a href="javascript:;" class="stop">停止</a>
+            </div>
+        </div>
+    </div>
+    <script src="static/js/jquery-1.11.3.min.js"></script>
+    <script src="static/js/lottery.js"></script>
+</body>
+</html>
