@@ -28,6 +28,7 @@ $(function() {
         num = randomNum();
         $('.avatar').attr('src',avatar[num].src);
         $(".prizer").text(people[num].username);
+        $('.blessing p').text(people[num].msg);
         immer = setTimeout(function() {
             TIMEOUT -= 50;
             if(TIMEOUT < 25) TIMEOUT = 25;
@@ -104,6 +105,7 @@ $(function() {
                         if(has_bd && bd_num != undefined) {
                             $('.avatar').attr('src',avatar[bd_num].src);
                             $(".prizer").text(people[bd_num].username);
+                            $('.blessing p').text(people[bd_num].msg)
                             chosed.push(bd_num);
                             bd_num = undefined;
                         }else {
