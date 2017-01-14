@@ -24,6 +24,7 @@ var log = logger.GetLogger("backend")
 type Options struct {
 	CfgDir string
 	TLS    bool
+	Addr   string
 }
 
 func getCurrentDir() string {
@@ -43,10 +44,15 @@ func MustParseArgs() *Options {
 		"t",
 		false,
 		"if use tls")
+	addr := flag.String(
+		"Addr",
+		"127.0.0.1:9999",
+		"bind address and port")
 	flag.Parse()
 	opts := &Options{
 		CfgDir: *cfgdir,
 		TLS:    *tls,
+		Addr:   *addr,
 	}
 	return opts
 }
@@ -81,8 +87,8 @@ func main() {
 	if opts.TLS {
 		crtPath := path.Join(opts.CfgDir, "server.crt")
 		keyPath := path.Join(opts.CfgDir, "private.key")
-		log.Info(http.ListenAndServeTLS("127.0.0.1:9999", crtPath, keyPath, nil))
+		log.Info(http.ListenAndServeTLS(opts.Addr, crtPath, keyPath, nil))
 	} else {
-		log.Info(http.ListenAndServe("127.0.0.1:9999", nil))
+		log.Info(http.ListenAndServe(opts.Addr, nil))
 	}
 }
