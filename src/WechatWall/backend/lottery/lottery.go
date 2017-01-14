@@ -6,7 +6,10 @@ import (
 	"WechatWall/libredis"
 	"WechatWall/logger"
 
+	"github.com/gorilla/mux"
+
 	"encoding/json"
+	"fmt"
 	"math/rand"
 	"net/http"
 )
@@ -32,10 +35,26 @@ func LoadMode() int {
 				return 0
 			case 1:
 				return 1
+			case 2:
+				return 2
 			default:
 				return dMode
 			}
 		}).(int)
+}
+
+func LoadBackDoor() string {
+	return config.GetConfig(ACfg, "",
+		func(cfg *config.Config) interface{} {
+			return cfg.Lottery.BackDoor
+		}).(string)
+}
+
+func ResetBackDoor() bool {
+	return config.SetConfig(ACfg, "",
+		func(cfg *config.Config, val interface{}) {
+			cfg.Lottery.BackDoor = val.(string)
+		})
 }
 
 func FailOnError(err error) {
@@ -76,6 +95,11 @@ type RespMsg struct {
 	UserList []UserInfo `json:"user_list"`
 }
 
+type BDMsg struct {
+	HasBD  bool   `json:"has_bd"`
+	Openid string `json:"openid"`
+}
+
 func GetLotteryOpenids(mode int) ([]string, error) {
 	var targetSet libredis.Set
 	switch mode {
@@ -83,6 +107,8 @@ func GetLotteryOpenids(mode int) ([]string, error) {
 		targetSet = sentSet
 	case 1:
 		targetSet = passSet
+	case 2:
+		targetSet = okSet
 	}
 	resSlice, err := okSet.Inter(targetSet)
 	if err != nil {
@@ -137,19 +163,26 @@ func GetUserInfos() ([]UserInfo, error) {
 	return users, nil
 }
 
-func GenResponse(w http.ResponseWriter) {
+func WriteResponse(w http.ResponseWriter, r *http.Request, resp interface{}) {
+	data, err := json.Marshal(resp)
+	if err != nil {
+		log.Error("failed to encode data to json:", err)
+		log.Debug("data:", resp)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+	w.Header().Set("Content-Type", "text/plain; charset=utf8")
+	callback := r.URL.Query().Get("callback")
+
+	if callback != "" {
+		fmt.Fprintf(w, "%s(%s)", callback, data)
+	} else {
+		w.Write(data)
+	}
+}
+
+func GenResponse(w http.ResponseWriter, r *http.Request) {
 	resp := &RespMsg{RetCode: 200}
-	defer func(w http.ResponseWriter, resp *RespMsg) {
-		data, err := json.Marshal(resp)
-		if err != nil {
-			log.Error("failed to encode data to json:", err)
-			log.Debug("data:", resp)
-			w.WriteHeader(http.StatusInternalServerError)
-		}
-		if _, err := w.Write(data); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
-	}(w, resp)
+	defer WriteResponse(w, r, resp)
 
 	users, err := GetUserInfos()
 	if err != nil {
@@ -161,8 +194,29 @@ func GenResponse(w http.ResponseWriter) {
 	resp.UserList = users
 }
 
-func ServeLottery(w http.ResponseWriter, r *http.Request) {
-	log.Warning("here comes a request to lottery api, PAY ATTENTION!")
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	GenResponse(w)
+func ServeLotteryFunc(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	funcName := vars["func"]
+	// log.Debug(*r)
+	switch funcName {
+	case "list":
+		log.Warning("here comes a request to lottery api, PAY ATTENTION!")
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		GenResponse(w, r)
+	case "bd":
+		log.Warning("here comes a request to BACK DOOR API")
+		bdmsg := &BDMsg{}
+		var bd string
+		bd = LoadBackDoor()
+		if bd == "" {
+			bdmsg.HasBD = false
+		} else {
+			bdmsg.HasBD = true
+			bdmsg.Openid = bd
+			if ResetBackDoor() == false {
+				log.Warning("failed to reset back door")
+			}
+		}
+		WriteResponse(w, r, bdmsg)
+	}
 }

@@ -58,7 +58,8 @@ func init() {
 	r.HandleFunc("/static/{type}/{name}", web.ServeStatic)
 	r.HandleFunc("/verifier", web.ServeVerifier)
 	r.HandleFunc("/wall", web.ServeWall)
-	r.HandleFunc("/lottery", lottery.ServeLottery)
+	r.HandleFunc("/lottery/{func}", lottery.ServeLotteryFunc)
+	r.HandleFunc("/lottery", web.ServeLottery)
 
 	http.HandleFunc("/wx_callback", wechat.CallbackHandler)
 	http.HandleFunc("/ws/wall", wall.ServeWallWS)

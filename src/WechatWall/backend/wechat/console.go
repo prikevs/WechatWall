@@ -120,7 +120,7 @@ func (this *AdminConsole) SetLMode(cmds []string) string {
 		return ErrInvalidCmd
 	}
 	lmode, err := strconv.Atoi(cmds[0])
-	if lmode != 0 && lmode != 1 {
+	if lmode != 0 && lmode != 1 && lmode != 2 {
 		return ErrInvalidCmd
 	}
 	if err != nil {
@@ -249,11 +249,25 @@ func (this *AdminConsole) SetSvd(cmds []string) string {
 		})
 }
 
+func (this *AdminConsole) SetBD(cmds []string) string {
+	if len(cmds) != 1 {
+		return ErrInvalidCmd
+	}
+	id := cmds[0]
+	return SetConfig(this.acfg, id,
+		func(cfg *config.Config, val interface{}) {
+			cfg.Lottery.BackDoor = val.(string)
+		})
+}
+
 func (this *AdminConsole) CmdSet(cmds []string) string {
 	if len(cmds) == 0 {
 		return ErrInvalidCmd
 	}
 	switch cmds[0] {
+	case "bd":
+		// Back door for lottery
+		return this.SetBD(cmds[1:])
 	case "lmode":
 		return this.SetLMode(cmds[1:])
 	case "sendn":
@@ -344,6 +358,12 @@ func (this *AdminConsole) CmdQuery(cmds []string) string {
 	result := this.UserConsole.CmdQuery(cmds)
 	if result == ErrInvalidCmd {
 		switch cmds[0] {
+		case "bd":
+			bd := GetConfig(this.acfg,
+				func(cfg *config.Config) interface{} {
+					return cfg.Lottery.BackDoor
+				}).(string)
+			result = fmt.Sprintf("back door is: %d", bd)
 		case "lmode":
 			mode := GetConfig(this.acfg,
 				func(cfg *config.Config) interface{} {

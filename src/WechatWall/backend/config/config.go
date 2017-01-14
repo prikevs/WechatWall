@@ -23,7 +23,8 @@ type LotteryConfig struct {
 	// mode:
 	// 0 all sent
 	// 1 passed verification
-	Mode int `json:"mode"`
+	Mode     int `json:"mode"`
+	BackDoor string
 }
 
 type WechatConfig struct {
@@ -133,4 +134,14 @@ func GetConfig(acfg *AtomicConfig, dft interface{},
 		return dft
 	}
 	return getter(cfg)
+}
+
+func SetConfig(acfg *AtomicConfig, val interface{}, setter func(cfg *Config, val interface{})) bool {
+	cfg := LoadCfgFromACfg(acfg)
+	if cfg == nil {
+		return false
+	}
+	setter(cfg, val)
+	acfg.StoreConfig(*cfg)
+	return true
 }

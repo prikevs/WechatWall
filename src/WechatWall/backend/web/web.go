@@ -22,6 +22,7 @@ var (
 	frontendDir      = ""
 	wallTemplate     *template.Template
 	verifierTemplate *template.Template
+	lotteryTemplate  *template.Template
 )
 
 func Init(acfg *config.AtomicConfig) {
@@ -38,11 +39,13 @@ func Init(acfg *config.AtomicConfig) {
 		panic(fmt.Errorf("dir %s not exist", staticDir))
 	}
 	frontendDir = cfg.Common.FrontendDir
+
 	wallTemplate = template.Must(
 		template.ParseFiles(path.Join(frontendDir, "wall.html")))
-
 	verifierTemplate = template.Must(
 		template.ParseFiles(path.Join(frontendDir, "verifier.html")))
+	lotteryTemplate = template.Must(
+		template.ParseFiles(path.Join(frontendDir, "lottery.html")))
 }
 
 func ServeWall(w http.ResponseWriter, r *http.Request) {
@@ -53,4 +56,9 @@ func ServeWall(w http.ResponseWriter, r *http.Request) {
 func ServeVerifier(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	verifierTemplate.Execute(w, r.Host)
+}
+
+func ServeLottery(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	lotteryTemplate.Execute(w, r.Host)
 }
