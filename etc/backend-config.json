@@ -1,0 +1,33 @@
+{
+    "wechat":{
+        "wx_app_id":"xxxxxxxxxxxxxxxxxxxxxxxx",
+        "wx_app_secret":"yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+        "wx_ori_id":"zzzzzzzzzzzzzzzzzzzzzzzzzzzz",
+        "wx_token":"test",
+        "wx_encoded_aes_key":"your_aes_key",
+        "message_on_subscribe": "欢迎关注！",
+        "message_on_received": "您的消息已收到，通过筛选后会上墙显示",
+        "admin_list":[
+            "o_xxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "o_yyyyyyyyyyyyyyyyyyyyyyyyyy"
+        ]
+    },
+
+    "verifier": {
+        "ready_pip_size": 5,
+        "max_msg_waiting_time": 300,
+        "send_verification_duration": 1,
+        "send_notification": true,
+        "notification_message": "您的消息 %s 已通过审核，即将上墙，谢谢您的祝福！",
+        "strict_origin": false,
+        "need_verification": true
+    },
+
+    "wall": {
+        "send_to_wall_duration": 2,
+        "reliable_msg": true
+    },
+    "lottery":{
+        "mode": 1
+    }
+}
